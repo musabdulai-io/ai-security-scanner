@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.eggs/
+*.egg
+.venv/
+venv/
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Generated reports
+*.html
+report.html
+
+# Node (frontend is built separately)
+frontend/node_modules/
+frontend/.next/
+
+# OS
+.DS_Store
