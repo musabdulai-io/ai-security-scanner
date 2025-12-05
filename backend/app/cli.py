@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from backend.app.core import logs, settings
+from backend.app.core.curl_parser import parse_curl, CurlParseError
 from backend.app.features.scanner.reporting import (
     generate_html_report,
     open_report,
@@ -32,8 +33,8 @@ console = Console()
 
 @app.command()
 def scan(
-    target: str = typer.Argument(
-        ...,
+    target: Optional[str] = typer.Argument(
+        None,
         help="Target LLM/RAG endpoint URL (e.g., https://example.com)",
     ),
     output: str = typer.Option(
@@ -53,6 +54,16 @@ def scan(
         "--header",
         "-H",
         help="Custom headers (e.g., 'Authorization: Bearer KEY')",
+    ),
+    curl: Optional[str] = typer.Option(
+        None,
+        "--curl",
+        help="Import target configuration from a cURL command",
+    ),
+    competitor: Optional[List[str]] = typer.Option(
+        None,
+        "--competitor",
+        help="Competitor names to test against (e.g., 'Acme Corp')",
     ),
     concurrency: int = typer.Option(
         5,
@@ -82,8 +93,33 @@ def scan(
         scanner scan https://example.com --fast --output audit.html
 
         scanner scan https://example.com -H "Authorization: Bearer sk-xxx"
+
+        scanner scan --curl "curl https://api.example.com -H 'Auth: token'"
+
+        scanner scan https://example.com --competitor "Acme" --competitor "ACME Corp"
     """
     try:
+        # Handle cURL import
+        if curl:
+            try:
+                curl_config = parse_curl(curl)
+                target = curl_config.base_url
+                # Merge cURL headers with explicit headers (explicit takes precedence)
+                for key, value in curl_config.headers.items():
+                    if key not in (header or []):
+                        if header is None:
+                            header = []
+                        header.append(f"{key}: {value}")
+                console.print(f"[dim]Imported from cURL: {curl_config.url}[/dim]")
+            except CurlParseError as e:
+                show_error(f"Failed to parse cURL command: {e}")
+                raise typer.Exit(1)
+
+        # Validate target
+        if not target:
+            show_error("Target URL is required. Provide it as argument or via --curl")
+            raise typer.Exit(1)
+
         # Parse headers
         headers = {}
         if header:
@@ -91,6 +127,9 @@ def scan(
                 if ":" in h:
                     key, value = h.split(":", 1)
                     headers[key.strip()] = value.strip()
+
+        # Parse competitors
+        competitors = list(competitor) if competitor else None
 
         # Show banner
         console.print()
@@ -102,6 +141,8 @@ def scan(
         console.print(f"Output: [dim]{output}[/dim]")
         if fast:
             console.print("[yellow]Fast mode: Skipping RAG upload tests[/yellow]")
+        if competitors:
+            console.print(f"[dim]Competitors: {', '.join(competitors)}[/dim]")
         console.print()
 
         # Sandbox mode check (for internal use)
@@ -110,7 +151,7 @@ def scan(
             raise typer.Exit(1)
 
         # Run the scan
-        result = asyncio.run(_run_scan(target, fast, headers))
+        result = asyncio.run(_run_scan(target, fast, headers, competitors))
 
         # Display results
         console.print()
@@ -137,9 +178,14 @@ def scan(
         raise typer.Exit(1)
 
 
-async def _run_scan(target: str, fast: bool, headers: dict):
+async def _run_scan(
+    target: str,
+    fast: bool,
+    headers: dict,
+    competitors: Optional[List[str]] = None,
+):
     """Run the scan asynchronously with progress display."""
-    scanner = ScannerService()
+    scanner = ScannerService(competitors=competitors)
 
     with Progress(
         SpinnerColumn(),
