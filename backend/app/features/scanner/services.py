@@ -10,12 +10,20 @@ import httpx
 from backend.app.core import logs, settings
 from .attacks import (
     AttackModule,
+    # Core attacks
     PIILeaker,
     PromptInjector,
     RAGPoisoner,
+    # QA checks
     CompetitorTrap,
     PricingTrap,
     OffTopicHandler,
+    # Advanced attacks
+    EncodingAttack,
+    StructureAttack,
+    IndirectInjection,
+    MultiTurnAttack,
+    LanguageAttack,
 )
 from .models import AttackResult, ScanResult, Vulnerability
 
@@ -26,7 +34,7 @@ class ScannerService:
     def __init__(self, competitors: Optional[List[str]] = None) -> None:
         """Initialize scanner with attack modules."""
         self.attacks: List[AttackModule] = [
-            # Adversarial security attacks
+            # Adversarial security attacks (Core)
             PromptInjector(),
             RAGPoisoner(),
             PIILeaker(),
@@ -34,6 +42,12 @@ class ScannerService:
             CompetitorTrap(competitors=competitors),
             PricingTrap(),
             OffTopicHandler(),
+            # Advanced attacks (2024-2025 research)
+            EncodingAttack(),
+            StructureAttack(),
+            IndirectInjection(),
+            MultiTurnAttack(),
+            LanguageAttack(),
         ]
 
     async def scan(
