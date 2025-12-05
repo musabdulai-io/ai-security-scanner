@@ -3,6 +3,7 @@
 
 import re
 import time
+import uuid
 from typing import Dict, List, Optional, Set, Tuple
 
 import httpx
@@ -160,6 +161,7 @@ class PIILeaker(AttackModule):
         start_time = time.time()
 
         query_endpoint = f"{target_url.rstrip('/')}/api/v1/rag/query"
+        session_id = str(uuid.uuid4())
         all_detected_pii: Set[str] = set()
 
         for i, prompt in enumerate(self.EXTRACTION_PROMPTS):
@@ -169,7 +171,7 @@ class PIILeaker(AttackModule):
             )
 
             try:
-                request_data = {"question": prompt}
+                request_data = {"question": prompt, "session_id": session_id}
                 response = await client.post(
                     query_endpoint,
                     json=request_data,

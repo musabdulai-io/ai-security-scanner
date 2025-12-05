@@ -3,6 +3,7 @@
 
 import re
 import time
+import uuid
 from typing import List, Optional
 
 import httpx
@@ -77,6 +78,7 @@ class PromptInjector(AttackModule):
         start_time = time.time()
 
         query_endpoint = f"{target_url.rstrip('/')}/api/v1/rag/query"
+        session_id = str(uuid.uuid4())
 
         for i, payload in enumerate(self.PAYLOADS):
             logs.debug(
@@ -86,7 +88,7 @@ class PromptInjector(AttackModule):
             )
 
             try:
-                request_data = {"question": payload}
+                request_data = {"question": payload, "session_id": session_id}
                 response = await client.post(
                     query_endpoint,
                     json=request_data,
