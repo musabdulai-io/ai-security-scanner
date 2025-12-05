@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.eggs/
+*.egg
+.venv/
+venv/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Generated reports
+report.html
+!backend/templates/*.html
+
+# Node (frontend)
+node_modules/
+.next/
+frontend/.env.local
+
+# OS
+.DS_Store
