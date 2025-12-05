@@ -24,6 +24,11 @@ from .attacks import (
     IndirectInjection,
     MultiTurnAttack,
     LanguageAttack,
+    # OWASP 2025 compliance
+    OutputWeaponization,
+    PromptExtraction,
+    HallucinationDetection,
+    ExcessiveAgency,
 )
 from .models import AttackResult, ScanResult, Vulnerability
 
@@ -48,6 +53,11 @@ class ScannerService:
             IndirectInjection(),
             MultiTurnAttack(),
             LanguageAttack(),
+            # OWASP 2025 compliance attacks
+            OutputWeaponization(),
+            PromptExtraction(),
+            HallucinationDetection(),
+            ExcessiveAgency(),
         ]
 
     async def scan(
