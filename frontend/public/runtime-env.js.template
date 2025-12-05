@@ -1,0 +1,2 @@
+/* Runtime environment configuration - Generated at container start */
+window.__ENV = $_RUNTIME_ENV_JSON;
