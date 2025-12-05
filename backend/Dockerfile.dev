@@ -1,0 +1,29 @@
+# Backend Dockerfile for AI Security Scanner - Development
+
+FROM python:3.11-slim AS development
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install poetry
+RUN pip install --no-cache-dir poetry && \
+    poetry config virtualenvs.create false
+
+# Copy dependency files from root context
+COPY pyproject.toml poetry.lock* ./
+
+# Install all dependencies including dev (--no-root skips installing the project itself)
+RUN poetry install --no-interaction --no-ansi --no-root
+
+# Copy application code
+COPY backend/ ./backend/
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV ENVIRONMENT=development
+
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
