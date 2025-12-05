@@ -8,19 +8,32 @@ from typing import Callable, List, Optional
 import httpx
 
 from backend.app.core import logs, settings
-from .attacks import AttackModule, PIILeaker, PromptInjector, RAGPoisoner
+from .attacks import (
+    AttackModule,
+    PIILeaker,
+    PromptInjector,
+    RAGPoisoner,
+    CompetitorTrap,
+    PricingTrap,
+    OffTopicHandler,
+)
 from .models import AttackResult, ScanResult, Vulnerability
 
 
 class ScannerService:
     """Orchestrates security scanning attacks."""
 
-    def __init__(self) -> None:
+    def __init__(self, competitors: Optional[List[str]] = None) -> None:
         """Initialize scanner with attack modules."""
         self.attacks: List[AttackModule] = [
+            # Adversarial security attacks
             PromptInjector(),
             RAGPoisoner(),
             PIILeaker(),
+            # Reliability / QA checks
+            CompetitorTrap(competitors=competitors),
+            PricingTrap(),
+            OffTopicHandler(),
         ]
 
     async def scan(
