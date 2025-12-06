@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW: int = 300  # 5 minutes per IP
 
     # Lead Generation
-    CTA_URL: str = "https://calendly.com/musabdulai"
+    CTA_URL: str = "https://calendly.com/musabdulai/ai-security-check"
     CTA_TEXT: str = "Book a Call → Get Expert Help"
 
     @property
