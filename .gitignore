@@ -19,8 +19,10 @@ venv/
 .coverage
 
 # Generated reports
-report.html
+*.html
+*.pdf
 !backend/templates/*.html
+!frontend/**/*.html
 
 # Node (frontend)
 node_modules/
