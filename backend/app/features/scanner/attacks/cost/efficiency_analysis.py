@@ -7,8 +7,8 @@ from typing import Optional
 
 import httpx
 
-from .base import AttackModule
-from ..models import AttackResult, Vulnerability, Severity
+from ..base import AttackModule
+from ...models import AttackResult, Vulnerability, Severity
 
 
 class EfficiencyAnalysis(AttackModule):
@@ -20,6 +20,7 @@ class EfficiencyAnalysis(AttackModule):
 
     name = "Efficiency Analysis"
     description = "Analyzes response latency and token efficiency"
+    category = "cost"
 
     # Benchmark queries of varying complexity
     BENCHMARK_QUERIES = [

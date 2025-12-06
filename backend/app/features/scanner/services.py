@@ -10,35 +10,35 @@ import httpx
 from backend.app.core import logs, settings, create_judge, LLMJudge
 from .attacks import (
     AttackModule,
-    # Core attacks
-    PIILeaker,
+    # Security attacks
     PromptInjector,
+    PIILeaker,
     RAGPoisoner,
-    # QA checks
-    CompetitorTrap,
-    PricingTrap,
-    OffTopicHandler,
-    # Advanced attacks
+    PromptExtraction,
+    OutputWeaponization,
+    ExcessiveAgency,
+    ToolAbuseAttack,
     EncodingAttack,
     StructureAttack,
     IndirectInjection,
     MultiTurnAttack,
     LanguageAttack,
     ManyShotJailbreak,
-    # OWASP 2025 compliance
-    OutputWeaponization,
-    PromptExtraction,
+    ContentContinuationAttack,
+    RefusalBypassTest,
+    # Reliability attacks
     HallucinationDetection,
-    ExcessiveAgency,
-    # Quality tests
     TableParsingTest,
     RetrievalPrecisionTest,
+    CompetitorTrap,
+    PricingTrap,
+    OffTopicHandler,
+    BrandSafetyTest,
+    # Cost attacks
     EfficiencyAnalysis,
-    # Additional OWASP coverage
-    ToolAbuseAttack,
     ResourceExhaustionAttack,
 )
-from .models import AttackResult, ScanResult, Vulnerability, Severity
+from .models import AttackResult, AttackCategory, ScanResult, Vulnerability, Severity
 
 
 class ScannerService:
@@ -58,32 +58,32 @@ class ScannerService:
             judge_provider: LLM provider for judge ("openai" or "anthropic")
         """
         self.attacks: List[AttackModule] = [
-            # Adversarial security attacks (Core)
+            # === SECURITY ATTACKS ===
             PromptInjector(),
-            RAGPoisoner(),
             PIILeaker(),
-            # Reliability / QA checks
-            CompetitorTrap(competitors=competitors),
-            PricingTrap(),
-            OffTopicHandler(),
-            # Advanced attacks (2024-2025 research)
+            RAGPoisoner(),
+            PromptExtraction(),
+            OutputWeaponization(),
+            ExcessiveAgency(),
+            ToolAbuseAttack(),
             EncodingAttack(),
             StructureAttack(),
             IndirectInjection(),
             MultiTurnAttack(),
             LanguageAttack(),
             ManyShotJailbreak(),
-            # OWASP 2025 compliance attacks
-            OutputWeaponization(),
-            PromptExtraction(),
+            ContentContinuationAttack(),
+            RefusalBypassTest(),
+            # === RELIABILITY ATTACKS ===
             HallucinationDetection(),
-            ExcessiveAgency(),
-            # Quality tests
             TableParsingTest(),
             RetrievalPrecisionTest(),
+            CompetitorTrap(competitors=competitors),
+            PricingTrap(),
+            OffTopicHandler(),
+            BrandSafetyTest(),
+            # === COST ATTACKS ===
             EfficiencyAnalysis(),
-            # Additional OWASP coverage (LLM04, LLM07)
-            ToolAbuseAttack(),
             ResourceExhaustionAttack(),
         ]
 
@@ -149,6 +149,17 @@ class ScannerService:
                 try:
                     result = await attack.execute(client, target_url, headers)
 
+                    # Add category from attack module
+                    category = AttackCategory(getattr(attack, "category", "security"))
+                    result = AttackResult(
+                        attack_type=result.attack_type,
+                        category=category,
+                        status=result.status,
+                        latency_ms=result.latency_ms,
+                        vulnerabilities=result.vulnerabilities,
+                        raw_log=result.raw_log,
+                    )
+
                     # LLM judge evaluation (if enabled and no vulnerabilities found)
                     if self.judge and not result.vulnerabilities and result.raw_log:
                         judge_vulns = await self._judge_evaluate(
@@ -157,6 +168,7 @@ class ScannerService:
                         if judge_vulns:
                             result = AttackResult(
                                 attack_type=result.attack_type,
+                                category=category,
                                 status="FAIL",
                                 latency_ms=result.latency_ms,
                                 vulnerabilities=judge_vulns,
@@ -184,9 +196,11 @@ class ScannerService:
                         on_progress(f"[ERROR] {attack.name}: {str(e)}")
 
                     # Record error as attack result
+                    category = AttackCategory(getattr(attack, "category", "security"))
                     attack_results.append(
                         AttackResult(
                             attack_type=attack.name,
+                            category=category,
                             status="ERROR",
                             latency_ms=0,
                             vulnerabilities=[],

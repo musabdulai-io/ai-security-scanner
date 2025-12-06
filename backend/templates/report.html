@@ -471,9 +471,10 @@
             </div>
         </div>
 
-        <!-- Attack Results -->
+        <!-- Security Attack Results -->
+        {% if security_attacks %}
         <section class="section">
-            <h2 class="section-title">Attack Results</h2>
+            <h2 class="section-title">Security Attacks</h2>
             <table class="attack-table">
                 <thead>
                     <tr>
@@ -484,7 +485,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for attack in result.attack_results %}
+                    {% for attack in security_attacks %}
                     <tr>
                         <td>{{ attack.attack_type }}</td>
                         <td>
@@ -503,13 +504,84 @@
                 </tbody>
             </table>
         </section>
+        {% endif %}
 
-        <!-- Vulnerabilities -->
-        {% if has_vulnerabilities %}
+        <!-- Reliability Attack Results -->
+        {% if reliability_attacks %}
         <section class="section">
-            <h2 class="section-title">Vulnerability Details</h2>
+            <h2 class="section-title">Reliability Tests</h2>
+            <table class="attack-table">
+                <thead>
+                    <tr>
+                        <th>Test Type</th>
+                        <th>Status</th>
+                        <th>Issues</th>
+                        <th>Latency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attack in reliability_attacks %}
+                    <tr>
+                        <td>{{ attack.attack_type }}</td>
+                        <td>
+                            {% if attack.status == 'PASS' %}
+                            <span class="status-pass">PASS</span>
+                            {% elif attack.status == 'FAIL' %}
+                            <span class="status-fail">FAIL</span>
+                            {% else %}
+                            <span class="status-error">ERROR</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ attack.vulnerabilities|length }}</td>
+                        <td>{{ attack.latency_ms }}ms</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
 
-            {% for vuln in result.vulnerabilities %}
+        <!-- Cost Attack Results -->
+        {% if cost_attacks %}
+        <section class="section">
+            <h2 class="section-title">Cost & Performance Analysis</h2>
+            <table class="attack-table">
+                <thead>
+                    <tr>
+                        <th>Test Type</th>
+                        <th>Status</th>
+                        <th>Issues</th>
+                        <th>Latency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attack in cost_attacks %}
+                    <tr>
+                        <td>{{ attack.attack_type }}</td>
+                        <td>
+                            {% if attack.status == 'PASS' %}
+                            <span class="status-pass">PASS</span>
+                            {% elif attack.status == 'FAIL' %}
+                            <span class="status-fail">FAIL</span>
+                            {% else %}
+                            <span class="status-error">ERROR</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ attack.vulnerabilities|length }}</td>
+                        <td>{{ attack.latency_ms }}ms</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+
+        <!-- Security Vulnerabilities -->
+        {% if security_vulns %}
+        <section class="section">
+            <h2 class="section-title">Security Vulnerabilities ({{ security_vuln_count }})</h2>
+
+            {% for vuln in security_vulns %}
             <div class="vulnerability-card">
                 <div class="vulnerability-header">
                     <h3>{{ vuln.name }}</h3>
@@ -534,6 +606,80 @@
                             {{ cta_text }}
                         </a>
                         <p class="cta-subtext">Get expert help fixing this vulnerability</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Reliability Issues -->
+        {% if reliability_vulns %}
+        <section class="section">
+            <h2 class="section-title">Reliability Issues ({{ reliability_vuln_count }})</h2>
+
+            {% for vuln in reliability_vulns %}
+            <div class="vulnerability-card">
+                <div class="vulnerability-header">
+                    <h3>{{ vuln.name }}</h3>
+                    <span class="badge {{ vuln.severity.value|lower }}">{{ vuln.severity.value }}</span>
+                </div>
+                <div class="vulnerability-body">
+                    <p>{{ vuln.description }}</p>
+
+                    <div class="evidence">
+                        <div class="evidence-item">
+                            <div class="label">Request / Payload</div>
+                            <pre>{{ vuln.evidence_request }}</pre>
+                        </div>
+                        <div class="evidence-item">
+                            <div class="label">Response / Evidence</div>
+                            <pre>{{ vuln.evidence_response }}</pre>
+                        </div>
+                    </div>
+
+                    <div class="cta-section">
+                        <a href="{{ cta_url }}" target="_blank" class="cta-button">
+                            {{ cta_text }}
+                        </a>
+                        <p class="cta-subtext">Get expert help fixing this issue</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Cost Issues -->
+        {% if cost_vulns %}
+        <section class="section">
+            <h2 class="section-title">Cost & Performance Issues ({{ cost_vuln_count }})</h2>
+
+            {% for vuln in cost_vulns %}
+            <div class="vulnerability-card">
+                <div class="vulnerability-header">
+                    <h3>{{ vuln.name }}</h3>
+                    <span class="badge {{ vuln.severity.value|lower }}">{{ vuln.severity.value }}</span>
+                </div>
+                <div class="vulnerability-body">
+                    <p>{{ vuln.description }}</p>
+
+                    <div class="evidence">
+                        <div class="evidence-item">
+                            <div class="label">Request / Payload</div>
+                            <pre>{{ vuln.evidence_request }}</pre>
+                        </div>
+                        <div class="evidence-item">
+                            <div class="label">Response / Evidence</div>
+                            <pre>{{ vuln.evidence_response }}</pre>
+                        </div>
+                    </div>
+
+                    <div class="cta-section">
+                        <a href="{{ cta_url }}" target="_blank" class="cta-button">
+                            {{ cta_text }}
+                        </a>
+                        <p class="cta-subtext">Get expert help optimizing costs</p>
                     </div>
                 </div>
             </div>

@@ -9,8 +9,8 @@ from typing import List, Optional
 import httpx
 
 from backend.app.core import logs
-from ..models import AttackResult, Vulnerability, Severity
-from .base import AttackModule
+from ...models import AttackResult, Vulnerability, Severity
+from ..base import AttackModule
 
 
 class CompetitorTrap(AttackModule):
@@ -18,6 +18,7 @@ class CompetitorTrap(AttackModule):
 
     name = "Competitor Trap"
     description = "Tests if the AI endorses competitors instead of pivoting to own value"
+    category = "reliability"
 
     # Default competitor names to test against
     DEFAULT_COMPETITORS = ["ChatGPT", "Gemini", "Claude", "your competitor"]
@@ -229,6 +230,7 @@ class PricingTrap(AttackModule):
 
     name = "Pricing Trap"
     description = "Tests if the AI inappropriately offers discounts or pricing changes"
+    category = "reliability"
 
     # More sophisticated pricing manipulation attempts
     PROMPTS = [
@@ -397,6 +399,7 @@ class OffTopicHandler(AttackModule):
 
     name = "Off-Topic Handling"
     description = "Tests if the AI properly refuses harmful or off-topic requests"
+    category = "reliability"
 
     # Off-topic and potentially harmful prompts
     PROMPTS = [

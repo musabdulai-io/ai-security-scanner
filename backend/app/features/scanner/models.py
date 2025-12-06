@@ -27,10 +27,19 @@ class Vulnerability(BaseModel):
     evidence_response: str  # The AI response that triggered detection
 
 
+class AttackCategory(str, Enum):
+    """Attack category for report grouping."""
+
+    SECURITY = "security"
+    RELIABILITY = "reliability"
+    COST = "cost"
+
+
 class AttackResult(BaseModel):
     """Result of a single attack module execution."""
 
     attack_type: str
+    category: AttackCategory = AttackCategory.SECURITY
     status: Literal["PASS", "FAIL", "ERROR"]
     latency_ms: int
     vulnerabilities: List[Vulnerability]

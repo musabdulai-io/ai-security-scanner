@@ -20,8 +20,8 @@ from typing import Dict, List, Optional
 import httpx
 
 from backend.app.core import logs
-from ..models import AttackResult, Vulnerability, Severity
-from .base import AttackModule
+from ...models import AttackResult, Vulnerability, Severity
+from ..base import AttackModule
 
 
 class HallucinationDetection(AttackModule):
@@ -29,6 +29,7 @@ class HallucinationDetection(AttackModule):
 
     name = "Hallucination Detection"
     description = "Tests if AI generates fabricated facts, URLs, or citations"
+    category = "reliability"
 
     # Tests designed to elicit hallucinations
     HALLUCINATION_TESTS: List[Dict] = [
