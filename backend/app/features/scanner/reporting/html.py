@@ -8,6 +8,7 @@ from typing import Dict
 from jinja2 import Environment, FileSystemLoader
 
 from backend.app.core import logs
+from backend.app.core.config import settings
 from ..models import ScanResult, Severity
 
 
@@ -46,6 +47,8 @@ def generate_html_report(result: ScanResult, output_path: str = "report.html") -
         has_vulnerabilities=len(result.vulnerabilities) > 0,
         severity_counts=severity_counts,
         total_vulnerabilities=len(result.vulnerabilities),
+        cta_url=settings.CTA_URL,
+        cta_text=settings.CTA_TEXT,
     )
 
     # Write to file
