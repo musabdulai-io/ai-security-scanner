@@ -14,6 +14,7 @@ class AttackModule(ABC):
 
     name: str
     description: str
+    category: str = "security"  # security, reliability, or cost
 
     @abstractmethod
     async def execute(

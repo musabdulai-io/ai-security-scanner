@@ -34,6 +34,9 @@ from .attacks import (
     TableParsingTest,
     RetrievalPrecisionTest,
     EfficiencyAnalysis,
+    # Additional OWASP coverage
+    ToolAbuseAttack,
+    ResourceExhaustionAttack,
 )
 from .models import AttackResult, ScanResult, Vulnerability, Severity
 
@@ -79,6 +82,9 @@ class ScannerService:
             TableParsingTest(),
             RetrievalPrecisionTest(),
             EfficiencyAnalysis(),
+            # Additional OWASP coverage (LLM04, LLM07)
+            ToolAbuseAttack(),
+            ResourceExhaustionAttack(),
         ]
 
         # Initialize LLM judge if requested
