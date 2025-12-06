@@ -176,18 +176,6 @@ export function HeroSection({
           </Button>
         )}
       </Box>
-
-      {/* Info Text */}
-      <Typography
-        variant='body2'
-        sx={{
-          mt: 2,
-          color: 'text.secondary',
-          fontSize: '0.875rem',
-        }}
-      >
-        Demo mode: Only scans the sandbox RAG application
-      </Typography>
     </Box>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Box, Container, Typography, Alert } from '@mui/material';
-import { HeroSection, TerminalUI, ResultModal, CLIInstructions } from '@/components';
+import { HeroSection, ScanProgress, ResultModal, CLIInstructions } from '@/components';
 import { startScan, createScanEventSource, type ScanResult } from '@/lib/api';
 import { getEnv } from '@/lib/env';
 import {
@@ -156,7 +156,7 @@ export default function Home() {
           </Alert>
         )}
 
-        {(isScanning || logs.length > 0) && <TerminalUI logs={logs} isRunning={isScanning} />}
+        {(isScanning || logs.length > 0) && <ScanProgress logs={logs} isRunning={isScanning} />}
 
         <ResultModal
           open={showResult}
