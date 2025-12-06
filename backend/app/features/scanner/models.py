@@ -23,7 +23,6 @@ class Vulnerability(BaseModel):
     name: str  # e.g., "System Prompt Leakage"
     severity: Severity
     description: str
-    remediation: str  # Code snippet or advice
     evidence_request: str  # The prompt we sent
     evidence_response: str  # The AI response that triggered detection
 

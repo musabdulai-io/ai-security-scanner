@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = 1
     RATE_LIMIT_WINDOW: int = 300  # 5 minutes per IP
 
+    # Lead Generation
+    CTA_URL: str = "https://calendly.com/musabdulai"
+    CTA_TEXT: str = "Book a Call → Get Expert Help"
+
     @property
     def is_production(self) -> bool:
         """Check if running in production environment."""

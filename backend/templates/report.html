@@ -297,21 +297,34 @@
             word-break: break-word;
         }
 
-        /* Remediation */
-        .remediation {
-            background-color: rgba(0, 255, 136, 0.05);
-            border: 1px solid rgba(0, 255, 136, 0.2);
+        /* CTA Button */
+        .cta-section {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+            color: var(--bg-primary);
+            padding: 0.875rem 2rem;
             border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
         }
 
-        .remediation .label {
-            color: var(--accent-green);
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
         }
 
-        .remediation p {
+        .cta-subtext {
+            margin-top: 0.5rem;
             color: var(--text-secondary);
+            font-size: 0.875rem;
         }
 
         /* Chat Replay Section */
@@ -516,9 +529,11 @@
                         </div>
                     </div>
 
-                    <div class="remediation">
-                        <div class="label">Remediation</div>
-                        <p>{{ vuln.remediation }}</p>
+                    <div class="cta-section">
+                        <a href="{{ cta_url }}" target="_blank" class="cta-button">
+                            {{ cta_text }}
+                        </a>
+                        <p class="cta-subtext">Get expert help fixing this vulnerability</p>
                     </div>
                 </div>
             </div>
