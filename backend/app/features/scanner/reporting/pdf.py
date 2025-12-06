@@ -1,7 +1,6 @@
-# backend/app/features/scanner/reporting/html.py
-"""HTML report generator using Jinja2 templates."""
+# backend/app/features/scanner/reporting/pdf.py
+"""PDF report generator using WeasyPrint."""
 
-import webbrowser
 from pathlib import Path
 from typing import Dict, List
 
@@ -9,7 +8,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from backend.app.core import logs
 from backend.app.core.config import settings
-from ..models import ScanResult, Severity, AttackResult
+from ..models import ScanResult, AttackResult
 
 # Sorting orders
 STATUS_ORDER = {"FAIL": 0, "ERROR": 1, "PASS": 2}
@@ -17,10 +16,7 @@ SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
 
 
 def calculate_score(severity_counts: Dict[str, int]) -> int:
-    """Calculate security score (0-100) based on vulnerability severities.
-
-    Formula: 100 - (critical*25 + high*15 + medium*5 + low*2)
-    """
+    """Calculate security score (0-100) based on vulnerability severities."""
     deductions = (
         severity_counts.get("CRITICAL", 0) * 25 +
         severity_counts.get("HIGH", 0) * 15 +
@@ -30,23 +26,48 @@ def calculate_score(severity_counts: Dict[str, int]) -> int:
     return max(0, 100 - deductions)
 
 
-def generate_html_report(
+def generate_pdf_report(
     result: ScanResult,
-    output_path: str = "report.html",
+    output_path: str = "report.pdf",
     verbose: bool = False,
 ) -> str:
     """
-    Generate HTML report from scan result.
+    Generate PDF report from scan result using WeasyPrint.
 
     Args:
         result: ScanResult object containing scan findings
-        output_path: Path to save the HTML report
+        output_path: Path to save the PDF report
         verbose: Include raw request/response logs in report
 
     Returns:
         Absolute path to the generated report file
     """
-    logs.info(f"Generating HTML report", "reporting", {"output": output_path})
+    try:
+        from weasyprint import HTML, CSS
+    except (ImportError, OSError) as e:
+        error_msg = str(e)
+        if "cannot load library" in error_msg or "OSError" in str(type(e)):
+            logs.error(
+                "WeasyPrint system dependencies missing. On macOS: brew install pango gdk-pixbuf libffi",
+                "reporting",
+            )
+            raise ImportError(
+                "WeasyPrint requires system libraries. Install with:\n"
+                "  macOS: brew install pango gdk-pixbuf libffi\n"
+                "  Ubuntu: apt install libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0\n"
+                "Then restart your terminal and try again."
+            )
+        else:
+            logs.error(
+                "WeasyPrint not installed. Install with: pip install weasyprint",
+                "reporting",
+            )
+            raise ImportError(
+                "WeasyPrint is required for PDF generation. "
+                "Install with: pip install weasyprint"
+            )
+
+    logs.info(f"Generating PDF report", "reporting", {"output": output_path})
 
     # Get template directory (backend/templates/)
     template_dir = Path(__file__).parent.parent.parent.parent.parent / "templates"
@@ -111,10 +132,9 @@ def generate_html_report(
             cat_value = "security"
         attack_category_map[attack.attack_type] = cat_value
 
-    # Categorize vulnerabilities based on which attack found them
+    # Categorize vulnerabilities
     for vuln in result.vulnerabilities:
-        # Try to determine category from vulnerability name
-        vuln_category = "security"  # default
+        vuln_category = "security"
         for attack_type, category in attack_category_map.items():
             if attack_type.lower() in vuln.name.lower():
                 vuln_category = category
@@ -133,7 +153,7 @@ def generate_html_report(
     cost_vulns.sort(key=lambda x: SEVERITY_ORDER.get(x.severity.value, 4))
 
     # Render template
-    html = template.render(
+    html_content = template.render(
         # Metadata
         target_url=result.target_url,
         scan_id=result.scan_id,
@@ -169,27 +189,14 @@ def generate_html_report(
         reliability_vuln_count=len(reliability_vulns),
         cost_vuln_count=len(cost_vulns),
 
-        # Verbose mode
-        include_raw_log=verbose,
-        raw_log=result.raw_log if verbose else [],
+        # Verbose mode - disabled for PDF (raw logs are excluded via no-print class)
+        include_raw_log=False,
+        raw_log=[],
     )
 
-    # Write to file
+    # Convert HTML to PDF
     output_file = Path(output_path).absolute()
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write(html)
+    HTML(string=html_content).write_pdf(str(output_file))
 
-    logs.info(f"Report generated", "reporting", {"path": str(output_file)})
+    logs.info(f"PDF report generated", "reporting", {"path": str(output_file)})
     return str(output_file)
-
-
-def open_report(path: str) -> None:
-    """
-    Open the HTML report in the default web browser.
-
-    Args:
-        path: Path to the HTML report file
-    """
-    file_url = f"file://{Path(path).absolute()}"
-    logs.debug(f"Opening report in browser", "reporting", {"url": file_url})
-    webbrowser.open(file_url)
