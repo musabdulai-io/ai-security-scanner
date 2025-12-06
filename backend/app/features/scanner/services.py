@@ -30,6 +30,10 @@ from .attacks import (
     PromptExtraction,
     HallucinationDetection,
     ExcessiveAgency,
+    # Quality tests
+    TableParsingTest,
+    RetrievalPrecisionTest,
+    EfficiencyAnalysis,
 )
 from .models import AttackResult, ScanResult, Vulnerability, Severity
 
@@ -71,6 +75,10 @@ class ScannerService:
             PromptExtraction(),
             HallucinationDetection(),
             ExcessiveAgency(),
+            # Quality tests
+            TableParsingTest(),
+            RetrievalPrecisionTest(),
+            EfficiencyAnalysis(),
         ]
 
         # Initialize LLM judge if requested
