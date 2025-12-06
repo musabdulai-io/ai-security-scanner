@@ -10,6 +10,7 @@ from .exceptions import (
     SandboxViolationError,
 )
 from .observability import logs
+from .judge import LLMJudge, JudgeResult, create_judge
 
 __all__ = [
     "settings",
@@ -19,4 +20,7 @@ __all__ = [
     "SecurityError",
     "RateLimitError",
     "SandboxViolationError",
+    "LLMJudge",
+    "JudgeResult",
+    "create_judge",
 ]

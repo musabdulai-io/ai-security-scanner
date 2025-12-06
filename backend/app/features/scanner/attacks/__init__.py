@@ -14,6 +14,7 @@ from .structure_attacks import StructureAttack
 from .indirect_injection import IndirectInjection
 from .multi_turn_attacks import MultiTurnAttack
 from .language_attacks import LanguageAttack
+from .many_shot_jailbreak import ManyShotJailbreak
 # OWASP 2025 compliance attacks
 from .output_weaponization import OutputWeaponization
 from .prompt_extraction import PromptExtraction
@@ -36,6 +37,7 @@ __all__ = [
     "IndirectInjection",
     "MultiTurnAttack",
     "LanguageAttack",
+    "ManyShotJailbreak",
     # OWASP 2025 compliance
     "OutputWeaponization",
     "PromptExtraction",
