@@ -88,8 +88,7 @@ export function HeroSection({
           mx: 'auto',
         }}
       >
-        Audit LLM and RAG applications for security vulnerabilities. Test for prompt injection, RAG
-        poisoning, and PII leakage.
+        Audit LLM and RAG applications for security, reliability, and cost vulnerabilities.
       </Typography>
 
       {/* Target URL Input */}

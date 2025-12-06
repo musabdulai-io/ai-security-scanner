@@ -1,6 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Button,
   Chip,
@@ -9,6 +13,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  LinearProgress,
   Table,
   TableBody,
   TableCell,
@@ -24,7 +29,8 @@ import TerminalIcon from '@mui/icons-material/Terminal';
 import ShieldIcon from '@mui/icons-material/Shield';
 import SpeedIcon from '@mui/icons-material/Speed';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import type { ScanResult, SeverityLevel, AttackResult, AttackCategory } from '@/lib/api';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import type { ScanResult, SeverityLevel, AttackCategory, Vulnerability } from '@/lib/api';
 
 interface ResultModalProps {
   open: boolean;
@@ -50,33 +56,44 @@ const categoryConfig: Record<
   AttackCategory,
   { label: string; color: string; icon: React.ReactNode }
 > = {
-  security: { label: 'Security', color: '#ff4444', icon: <ShieldIcon sx={{ fontSize: 16 }} /> },
+  security: { label: 'Security', color: '#ff4444', icon: <ShieldIcon sx={{ fontSize: 18 }} /> },
   reliability: {
     label: 'Reliability',
     color: '#ff8c00',
-    icon: <SpeedIcon sx={{ fontSize: 16 }} />,
+    icon: <SpeedIcon sx={{ fontSize: 18 }} />,
   },
-  cost: { label: 'Cost', color: '#4488ff', icon: <AttachMoneyIcon sx={{ fontSize: 16 }} /> },
+  cost: { label: 'Cost', color: '#4488ff', icon: <AttachMoneyIcon sx={{ fontSize: 18 }} /> },
 };
 
-// Group attacks by category
-const groupAttacksByCategory = (attacks: AttackResult[]) => {
-  const security = attacks.filter(a => a.category === 'security');
-  const reliability = attacks.filter(a => a.category === 'reliability');
-  const cost = attacks.filter(a => a.category === 'cost');
-  return { security, reliability, cost };
+// Calculate security score (same as HTML/PDF reports)
+const calculateSecurityScore = (vulnerabilities: Vulnerability[]) => {
+  const weights: Record<SeverityLevel, number> = { CRITICAL: 25, HIGH: 15, MEDIUM: 8, LOW: 3 };
+  const totalDeductions = vulnerabilities.reduce((sum, v) => sum + weights[v.severity], 0);
+  return Math.max(0, 100 - totalDeductions);
+};
+
+// Get score color based on value
+const getScoreColor = (score: number) => {
+  if (score >= 90) return '#00ff88';
+  if (score >= 70) return '#ffcc00';
+  if (score >= 50) return '#ff8c00';
+  return '#ff4444';
 };
 
 // Sort attacks: FAIL first, then ERROR, then PASS
-const sortAttacks = (attacks: AttackResult[]) => {
+const sortAttacks = <T extends { status: string }>(attacks: T[]): T[] => {
   const order: Record<string, number> = { FAIL: 0, ERROR: 1, PASS: 2 };
   return [...attacks].sort((a, b) => order[a.status] - order[b.status]);
 };
 
 export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalProps) {
+  const [expandedVuln, setExpandedVuln] = useState<string | false>(false);
+
   if (!result) return null;
 
   const hasVulnerabilities = result.vulnerabilities.length > 0;
+  const securityScore = calculateSecurityScore(result.vulnerabilities);
+  const scoreColor = getScoreColor(securityScore);
 
   // Count by severity
   const severityCounts = result.vulnerabilities.reduce(
@@ -87,8 +104,16 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
     {} as Record<SeverityLevel, number>,
   );
 
+  // Count by category
+  const categoryCounts = (result.attack_results || []).reduce(
+    (acc, attack) => {
+      acc[attack.category] = (acc[attack.category] || 0) + attack.vulnerabilities.length;
+      return acc;
+    },
+    {} as Record<AttackCategory, number>,
+  );
+
   const handleDownloadReport = () => {
-    // Generate a simple HTML report from the result
     const html = generateReportHTML(result);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -111,26 +136,16 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
         sx: {
           backgroundColor: 'background.paper',
           backgroundImage: 'none',
+          maxHeight: '90vh',
         },
       }}
     >
-      <DialogTitle
-        sx={{
-          textAlign: 'center',
-          pb: 1,
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            mb: 2,
-          }}
-        >
+      <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
           {hasVulnerabilities ? (
-            <ErrorIcon sx={{ fontSize: 64, color: 'error.main' }} />
+            <ErrorIcon sx={{ fontSize: 48, color: 'error.main' }} />
           ) : (
-            <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main' }} />
+            <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main' }} />
           )}
         </Box>
         <Typography
@@ -144,40 +159,76 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
         </Typography>
       </DialogTitle>
 
-      <DialogContent>
-        {/* Vulnerability Count */}
+      <DialogContent sx={{ pt: 0 }}>
+        {/* Security Score */}
         <Box
           sx={{
-            textAlign: 'center',
-            mb: 3,
+            background: 'rgba(255,255,255,0.03)',
+            borderRadius: 2,
+            p: 2,
+            mb: 2,
+            border: `1px solid ${scoreColor}30`,
           }}
         >
-          <Typography
-            variant='h2'
-            sx={{
-              fontSize: '3rem',
-              fontWeight: 700,
-              color: hasVulnerabilities ? 'error.main' : 'success.main',
-            }}
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}
           >
-            {result.vulnerabilities.length}
-          </Typography>
-          <Typography color='text.secondary'>
-            {result.vulnerabilities.length === 1 ? 'vulnerability found' : 'vulnerabilities found'}
-          </Typography>
+            <Typography variant='subtitle2' color='text.secondary'>
+              Security Score
+            </Typography>
+            <Typography variant='h5' sx={{ color: scoreColor, fontWeight: 700 }}>
+              {securityScore}/100
+            </Typography>
+          </Box>
+          <LinearProgress
+            variant='determinate'
+            value={securityScore}
+            sx={{
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: scoreColor,
+                borderRadius: 4,
+              },
+            }}
+          />
+        </Box>
+
+        {/* Category Summary */}
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+          {(['security', 'reliability', 'cost'] as AttackCategory[]).map(category => {
+            const count = categoryCounts[category] || 0;
+            const config = categoryConfig[category];
+            return (
+              <Box
+                key={category}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 1,
+                  backgroundColor: count > 0 ? `${config.color}15` : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${count > 0 ? config.color : 'transparent'}30`,
+                }}
+              >
+                <Box sx={{ color: config.color, display: 'flex' }}>{config.icon}</Box>
+                <Typography
+                  variant='body2'
+                  sx={{ color: count > 0 ? config.color : 'text.secondary' }}
+                >
+                  {config.label}: {count}
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
 
         {/* Severity Badges */}
         {hasVulnerabilities && (
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: 1,
-              mb: 3,
-              flexWrap: 'wrap',
-            }}
-          >
+          <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
             {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as SeverityLevel[]).map(severity =>
               severityCounts[severity] ? (
                 <Chip
@@ -189,6 +240,7 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
                     color: severityColors[severity],
                     border: `1px solid ${severityColors[severity]}`,
                     fontWeight: 600,
+                    fontSize: '0.7rem',
                   }}
                 />
               ) : null,
@@ -196,26 +248,12 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
           </Box>
         )}
 
-        <Divider sx={{ mb: 3 }} />
+        <Divider sx={{ my: 2 }} />
 
-        {/* Scan Details */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant='body2' color='text.secondary' gutterBottom>
-            Target: {result.target_url}
-          </Typography>
-          <Typography variant='body2' color='text.secondary' gutterBottom>
-            Duration: {result.duration_seconds.toFixed(2)}s
-          </Typography>
-          <Typography variant='body2' color='text.secondary'>
-            Scan ID: {result.scan_id.slice(0, 8)}...
-          </Typography>
-        </Box>
-
-        {/* Attack Results by Category */}
+        {/* Attack Results Table */}
         {result.attack_results && result.attack_results.length > 0 && (
-          <>
-            <Divider sx={{ mb: 2 }} />
-            <Typography variant='subtitle2' sx={{ mb: 2, fontWeight: 600 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant='subtitle2' sx={{ mb: 1.5, fontWeight: 600 }}>
               Attack Results
             </Typography>
             {(['security', 'reliability', 'cost'] as AttackCategory[]).map(category => {
@@ -225,10 +263,10 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
               if (categoryAttacks.length === 0) return null;
               const config = categoryConfig[category];
               return (
-                <Box key={category} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Box sx={{ color: config.color }}>{config.icon}</Box>
-                    <Typography variant='body2' sx={{ fontWeight: 600, color: config.color }}>
+                <Box key={category} sx={{ mb: 1.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                    <Box sx={{ color: config.color, display: 'flex' }}>{config.icon}</Box>
+                    <Typography variant='caption' sx={{ fontWeight: 600, color: config.color }}>
                       {config.label}
                     </Typography>
                   </Box>
@@ -236,14 +274,25 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
                     <Table size='small'>
                       <TableHead>
                         <TableRow>
-                          <TableCell sx={{ color: 'text.secondary', py: 0.5 }}>Attack</TableCell>
-                          <TableCell sx={{ color: 'text.secondary', py: 0.5 }} align='center'>
+                          <TableCell sx={{ color: 'text.secondary', py: 0.5, fontSize: '0.75rem' }}>
+                            Attack
+                          </TableCell>
+                          <TableCell
+                            sx={{ color: 'text.secondary', py: 0.5, fontSize: '0.75rem' }}
+                            align='center'
+                          >
                             Status
                           </TableCell>
-                          <TableCell sx={{ color: 'text.secondary', py: 0.5 }} align='center'>
+                          <TableCell
+                            sx={{ color: 'text.secondary', py: 0.5, fontSize: '0.75rem' }}
+                            align='center'
+                          >
                             Issues
                           </TableCell>
-                          <TableCell sx={{ color: 'text.secondary', py: 0.5 }} align='right'>
+                          <TableCell
+                            sx={{ color: 'text.secondary', py: 0.5, fontSize: '0.75rem' }}
+                            align='right'
+                          >
                             Latency
                           </TableCell>
                         </TableRow>
@@ -251,7 +300,9 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
                       <TableBody>
                         {categoryAttacks.map(attack => (
                           <TableRow key={attack.attack_type}>
-                            <TableCell sx={{ py: 0.5 }}>{attack.attack_type}</TableCell>
+                            <TableCell sx={{ py: 0.5, fontSize: '0.8rem' }}>
+                              {attack.attack_type}
+                            </TableCell>
                             <TableCell align='center' sx={{ py: 0.5 }}>
                               <Chip
                                 label={attack.status}
@@ -260,15 +311,18 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
                                   backgroundColor: `${statusColors[attack.status]}20`,
                                   color: statusColors[attack.status],
                                   fontWeight: 600,
-                                  fontSize: '0.7rem',
-                                  height: 20,
+                                  fontSize: '0.65rem',
+                                  height: 18,
                                 }}
                               />
                             </TableCell>
-                            <TableCell align='center' sx={{ py: 0.5 }}>
+                            <TableCell align='center' sx={{ py: 0.5, fontSize: '0.8rem' }}>
                               {attack.vulnerabilities.length}
                             </TableCell>
-                            <TableCell align='right' sx={{ py: 0.5 }}>
+                            <TableCell
+                              align='right'
+                              sx={{ py: 0.5, fontSize: '0.8rem', color: 'text.secondary' }}
+                            >
                               {attack.latency_ms}ms
                             </TableCell>
                           </TableRow>
@@ -279,25 +333,96 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
                 </Box>
               );
             })}
+          </Box>
+        )}
+
+        {/* Vulnerabilities Found (Expandable) */}
+        {hasVulnerabilities && (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant='subtitle2' sx={{ mb: 1, fontWeight: 600 }}>
+              Vulnerabilities Found
+            </Typography>
+            {result.vulnerabilities.map((vuln, idx) => (
+              <Accordion
+                key={`${vuln.name}-${idx}`}
+                expanded={expandedVuln === `${vuln.name}-${idx}`}
+                onChange={(_, isExpanded) =>
+                  setExpandedVuln(isExpanded ? `${vuln.name}-${idx}` : false)
+                }
+                sx={{
+                  backgroundColor: 'transparent',
+                  boxShadow: 'none',
+                  '&:before': { display: 'none' },
+                  border: `1px solid ${severityColors[vuln.severity]}30`,
+                  borderRadius: '4px !important',
+                  mb: 1,
+                  '&.Mui-expanded': { margin: '0 0 8px 0' },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}
+                  sx={{ minHeight: 40, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    <Typography variant='body2' sx={{ fontWeight: 500, flex: 1 }}>
+                      {vuln.name}
+                    </Typography>
+                    <Chip
+                      label={vuln.severity}
+                      size='small'
+                      sx={{
+                        backgroundColor: `${severityColors[vuln.severity]}20`,
+                        color: severityColors[vuln.severity],
+                        fontWeight: 600,
+                        fontSize: '0.65rem',
+                        height: 18,
+                      }}
+                    />
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <Typography variant='body2' color='text.secondary' sx={{ fontSize: '0.8rem' }}>
+                    {vuln.description}
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+            ))}
           </>
         )}
+
+        <Divider sx={{ my: 2 }} />
+
+        {/* Scan Details */}
+        <Box>
+          <Typography variant='subtitle2' sx={{ mb: 1, fontWeight: 600 }}>
+            Scan Details
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+            <Typography variant='caption' color='text.secondary'>
+              Target: {result.target_url}
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              Duration: {result.duration_seconds.toFixed(2)}s
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              Scan ID: {result.scan_id.slice(0, 8)}
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              Time: {new Date(result.timestamp).toLocaleString()}
+            </Typography>
+          </Box>
+        </Box>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          flexDirection: 'column',
-          gap: 1,
-          px: 3,
-          pb: 3,
-        }}
-      >
+      <DialogActions sx={{ flexDirection: 'column', gap: 1, px: 3, pb: 3 }}>
         <Button
           variant='contained'
           fullWidth
           startIcon={<DownloadIcon />}
           onClick={handleDownloadReport}
         >
-          Download Report
+          Download Full Report
         </Button>
         <Button variant='outlined' fullWidth startIcon={<TerminalIcon />} onClick={onShowCLI}>
           Scan Your Own App (CLI)
@@ -330,6 +455,21 @@ function generateReportHTML(result: ScanResult): string {
     cost: { label: 'Cost', color: '#4488ff' },
   };
 
+  // Calculate security score
+  const weights: Record<string, number> = { CRITICAL: 25, HIGH: 15, MEDIUM: 8, LOW: 3 };
+  const securityScore = Math.max(
+    0,
+    100 - result.vulnerabilities.reduce((sum, v) => sum + (weights[v.severity] || 0), 0),
+  );
+  const scoreColor =
+    securityScore >= 90
+      ? '#00ff88'
+      : securityScore >= 70
+        ? '#ffcc00'
+        : securityScore >= 50
+          ? '#ff8c00'
+          : '#ff4444';
+
   const vulnerabilitiesHTML = result.vulnerabilities
     .map(
       vuln => `
@@ -352,7 +492,6 @@ function generateReportHTML(result: ScanResult): string {
     )
     .join('');
 
-  // Generate attack results table by category
   const attackResultsHTML =
     result.attack_results && result.attack_results.length > 0
       ? (['security', 'reliability', 'cost'] as const)
@@ -412,6 +551,9 @@ function generateReportHTML(result: ScanResult): string {
     .status { text-align: center; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
     .status.failed { background: rgba(255, 68, 68, 0.1); border: 1px solid #ff4444; }
     .status.passed { background: rgba(0, 255, 136, 0.1); border: 1px solid #00ff88; }
+    .score-card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid ${scoreColor}30; }
+    .score-bar { height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
+    .score-fill { height: 100%; background: ${scoreColor}; width: ${securityScore}%; }
     .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
     .meta-item { background: #141414; padding: 16px; border-radius: 8px; }
     .meta-label { color: #a0a0a0; font-size: 12px; margin-bottom: 4px; }
@@ -420,6 +562,15 @@ function generateReportHTML(result: ScanResult): string {
 <body>
   <div class="container">
     <h1>AI Security Scan Report</h1>
+
+    <div class="score-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span style="color: #a0a0a0;">Security Score</span>
+        <span style="font-size: 28px; font-weight: bold; color: ${scoreColor};">${securityScore}/100</span>
+      </div>
+      <div class="score-bar"><div class="score-fill"></div></div>
+    </div>
+
     <div class="status ${result.vulnerabilities.length > 0 ? 'failed' : 'passed'}">
       <h2 style="color: ${result.vulnerabilities.length > 0 ? '#ff4444' : '#00ff88'}; margin: 0;">
         ${result.vulnerabilities.length > 0 ? 'VULNERABILITIES DETECTED' : 'SCAN PASSED'}
@@ -428,14 +579,17 @@ function generateReportHTML(result: ScanResult): string {
         ${result.vulnerabilities.length}
       </div>
     </div>
+
     <div class="meta">
       <div class="meta-item"><div class="meta-label">Target</div>${result.target_url}</div>
-      <div class="meta-item"><div class="meta-label">Scan ID</div>${result.scan_id.slice(0, 8)}...</div>
+      <div class="meta-item"><div class="meta-label">Scan ID</div>${result.scan_id.slice(0, 8)}</div>
       <div class="meta-item"><div class="meta-label">Timestamp</div>${new Date(result.timestamp).toLocaleString()}</div>
       <div class="meta-item"><div class="meta-label">Duration</div>${result.duration_seconds.toFixed(2)}s</div>
     </div>
+
     ${attackResultsHTML ? `<h2>Attack Results</h2>${attackResultsHTML}` : ''}
     ${result.vulnerabilities.length > 0 ? `<h2>Vulnerability Details</h2>${vulnerabilitiesHTML}` : ''}
+
     <footer style="text-align: center; color: #a0a0a0; margin-top: 40px; padding-top: 20px; border-top: 1px solid #333;">
       Generated by AI Security Scanner
     </footer>
