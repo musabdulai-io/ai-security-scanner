@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from backend.app.core.config import settings
 from ..models import AttackResult, ScanResult
 
 # Global console instance
@@ -143,4 +144,5 @@ def show_vulnerabilities_detail(result: ScanResult) -> None:
         console.print(f"[bold]{i}. {vuln.name}[/bold]")
         console.print(f"   Severity: [{color}]{vuln.severity.value}[/{color}]")
         console.print(f"   {vuln.description}")
+        console.print(f"   [cyan]→ {settings.CTA_TEXT}: {settings.CTA_URL}[/cyan]")
         console.print()
