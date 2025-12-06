@@ -35,16 +35,16 @@
         .severity-low { background-color: rgba(59, 130, 246, 0.2); color: #93c5fd; border-color: rgba(59, 130, 246, 0.5); }
     </style>
 </head>
-<body class="min-h-screen p-8 max-w-6xl mx-auto">
+<body class="min-h-screen p-4 sm:p-8 max-w-6xl mx-auto">
 
     <!-- Executive Header -->
-    <header class="flex justify-between items-end border-b border-slate-700 pb-6 mb-8">
+    <header class="flex flex-col sm:flex-row justify-between sm:items-end border-b border-slate-700 pb-6 mb-8 gap-4">
         <div>
             <p class="text-emerald-400 font-bold tracking-wider text-sm uppercase mb-2">Confidential Audit Report</p>
-            <h1 class="text-4xl font-bold text-white mb-1">AI Security Assessment</h1>
-            <p class="text-slate-400">Target: <span class="text-white mono">{{ target_url }}</span></p>
+            <h1 class="text-2xl sm:text-4xl font-bold text-white mb-1">AI Security Assessment</h1>
+            <p class="text-slate-400 break-all">Target: <span class="text-white mono">{{ target_url }}</span></p>
         </div>
-        <div class="text-right">
+        <div class="sm:text-right">
             <p class="text-slate-400 text-sm">Scan Date</p>
             <p class="mono text-lg">{{ timestamp.strftime('%Y-%m-%d %H:%M') if timestamp else 'N/A' }}</p>
             <p class="text-slate-500 text-xs mt-1">ID: {{ scan_id[:8] }}</p>
@@ -68,7 +68,7 @@
         <!-- Vulnerability Stats -->
         <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 col-span-2">
             <h3 class="text-slate-400 text-sm uppercase font-bold mb-4">Vulnerability Breakdown</h3>
-            <div class="grid grid-cols-5 gap-3 text-center">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
                 <div class="p-3 bg-red-900/20 rounded-lg border border-red-900/50">
                     <div class="text-2xl font-bold text-red-400">{{ critical_count }}</div>
                     <div class="text-xs text-red-300/70 uppercase mt-1">Critical</div>
@@ -110,6 +110,12 @@
             <p class="text-emerald-400"><strong>SYSTEM SECURE:</strong> The target application demonstrates a robust security posture. All critical injection vectors were blocked by the existing guardrails.</p>
             {% endif %}
         </div>
+        <!-- CTA Button -->
+        <div class="mt-6 text-center no-print">
+            <a href="{{ cta_url }}" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/30">
+                <i class="fas fa-shield-halved mr-2"></i> {{ cta_text }}
+            </a>
+        </div>
     </section>
 
     <!-- Attack Results Tables -->
@@ -122,11 +128,11 @@
             <h3 class="text-lg font-semibold text-red-400 mb-3 flex items-center gap-2">
                 <i class="fas fa-shield-halved"></i> Security Attacks ({{ security_attacks|length }})
             </h3>
-            <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
-                <table class="w-full text-sm">
+            <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+                <table class="w-full text-sm min-w-[400px]">
                     <thead class="bg-slate-900/50 text-slate-400 uppercase text-xs">
                         <tr>
-                            <th class="px-4 py-3 text-left">Attack Type</th>
+                            <th class="px-4 py-3 text-left sticky left-0 bg-slate-900/50">Attack Type</th>
                             <th class="px-4 py-3 text-center">Status</th>
                             <th class="px-4 py-3 text-center">Issues</th>
                             <th class="px-4 py-3 text-right">Latency</th>
@@ -135,7 +141,7 @@
                     <tbody class="divide-y divide-slate-700">
                         {% for attack in security_attacks %}
                         <tr class="hover:bg-slate-700/30">
-                            <td class="px-4 py-3 text-slate-200">{{ attack.attack_type }}</td>
+                            <td class="px-4 py-3 text-slate-200 sticky left-0 bg-slate-800">{{ attack.attack_type }}</td>
                             <td class="px-4 py-3 text-center">
                                 {% if attack.status == 'FAIL' %}
                                 <span class="status-fail"><i class="fas fa-times-circle"></i> FAIL</span>
@@ -167,11 +173,11 @@
             <h3 class="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
                 <i class="fas fa-chart-line"></i> Reliability Tests ({{ reliability_attacks|length }})
             </h3>
-            <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
-                <table class="w-full text-sm">
+            <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+                <table class="w-full text-sm min-w-[400px]">
                     <thead class="bg-slate-900/50 text-slate-400 uppercase text-xs">
                         <tr>
-                            <th class="px-4 py-3 text-left">Test Type</th>
+                            <th class="px-4 py-3 text-left sticky left-0 bg-slate-900/50">Test Type</th>
                             <th class="px-4 py-3 text-center">Status</th>
                             <th class="px-4 py-3 text-center">Issues</th>
                             <th class="px-4 py-3 text-right">Latency</th>
@@ -180,7 +186,7 @@
                     <tbody class="divide-y divide-slate-700">
                         {% for attack in reliability_attacks %}
                         <tr class="hover:bg-slate-700/30">
-                            <td class="px-4 py-3 text-slate-200">{{ attack.attack_type }}</td>
+                            <td class="px-4 py-3 text-slate-200 sticky left-0 bg-slate-800">{{ attack.attack_type }}</td>
                             <td class="px-4 py-3 text-center">
                                 {% if attack.status == 'FAIL' %}
                                 <span class="status-fail"><i class="fas fa-times-circle"></i> FAIL</span>
@@ -212,11 +218,11 @@
             <h3 class="text-lg font-semibold text-blue-400 mb-3 flex items-center gap-2">
                 <i class="fas fa-dollar-sign"></i> Cost & Performance ({{ cost_attacks|length }})
             </h3>
-            <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
-                <table class="w-full text-sm">
+            <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+                <table class="w-full text-sm min-w-[400px]">
                     <thead class="bg-slate-900/50 text-slate-400 uppercase text-xs">
                         <tr>
-                            <th class="px-4 py-3 text-left">Test Type</th>
+                            <th class="px-4 py-3 text-left sticky left-0 bg-slate-900/50">Test Type</th>
                             <th class="px-4 py-3 text-center">Status</th>
                             <th class="px-4 py-3 text-center">Issues</th>
                             <th class="px-4 py-3 text-right">Latency</th>
@@ -225,7 +231,7 @@
                     <tbody class="divide-y divide-slate-700">
                         {% for attack in cost_attacks %}
                         <tr class="hover:bg-slate-700/30">
-                            <td class="px-4 py-3 text-slate-200">{{ attack.attack_type }}</td>
+                            <td class="px-4 py-3 text-slate-200 sticky left-0 bg-slate-800">{{ attack.attack_type }}</td>
                             <td class="px-4 py-3 text-center">
                                 {% if attack.status == 'FAIL' %}
                                 <span class="status-fail"><i class="fas fa-times-circle"></i> FAIL</span>
@@ -287,9 +293,9 @@
                             <div class="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
                                 <i class="fas fa-user text-slate-300"></i>
                             </div>
-                            <div class="bg-slate-700 p-3 rounded-lg rounded-tl-none text-slate-200 max-w-2xl">
+                            <div class="bg-slate-700 p-3 rounded-lg rounded-tl-none text-slate-200 w-full">
                                 <p class="mono text-xs text-slate-400 mb-1">Attack Input</p>
-                                <p class="whitespace-pre-wrap">{{ vuln.evidence_request[:500] }}{% if vuln.evidence_request|length > 500 %}...{% endif %}</p>
+                                <p class="whitespace-pre-wrap break-words">{{ vuln.evidence_request }}</p>
                             </div>
                         </div>
 
@@ -298,9 +304,9 @@
                             <div class="w-8 h-8 rounded-full bg-red-900/50 flex items-center justify-center flex-shrink-0 border border-red-500/30">
                                 <i class="fas fa-robot text-red-400"></i>
                             </div>
-                            <div class="bg-red-900/20 border border-red-900/50 p-3 rounded-lg rounded-tr-none text-red-200 max-w-2xl">
+                            <div class="bg-red-900/20 border border-red-900/50 p-3 rounded-lg rounded-tr-none text-red-200 w-full">
                                 <p class="mono text-xs text-red-400/70 mb-1">AI Response (Vulnerable)</p>
-                                <p class="whitespace-pre-wrap">{{ vuln.evidence_response[:500] }}{% if vuln.evidence_response|length > 500 %}...{% endif %}</p>
+                                <p class="whitespace-pre-wrap break-words">{{ vuln.evidence_response }}</p>
                             </div>
                         </div>
                     </div>
@@ -334,18 +340,18 @@
                             <div class="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
                                 <i class="fas fa-user text-slate-300"></i>
                             </div>
-                            <div class="bg-slate-700 p-3 rounded-lg rounded-tl-none text-slate-200 max-w-2xl">
+                            <div class="bg-slate-700 p-3 rounded-lg rounded-tl-none text-slate-200 w-full">
                                 <p class="mono text-xs text-slate-400 mb-1">Input</p>
-                                <p class="whitespace-pre-wrap">{{ vuln.evidence_request[:500] }}{% if vuln.evidence_request|length > 500 %}...{% endif %}</p>
+                                <p class="whitespace-pre-wrap break-words">{{ vuln.evidence_request }}</p>
                             </div>
                         </div>
                         <div class="flex gap-3 flex-row-reverse">
                             <div class="w-8 h-8 rounded-full bg-yellow-900/50 flex items-center justify-center flex-shrink-0 border border-yellow-500/30">
                                 <i class="fas fa-robot text-yellow-400"></i>
                             </div>
-                            <div class="bg-yellow-900/20 border border-yellow-900/50 p-3 rounded-lg rounded-tr-none text-yellow-200 max-w-2xl">
+                            <div class="bg-yellow-900/20 border border-yellow-900/50 p-3 rounded-lg rounded-tr-none text-yellow-200 w-full">
                                 <p class="mono text-xs text-yellow-400/70 mb-1">AI Response</p>
-                                <p class="whitespace-pre-wrap">{{ vuln.evidence_response[:500] }}{% if vuln.evidence_response|length > 500 %}...{% endif %}</p>
+                                <p class="whitespace-pre-wrap break-words">{{ vuln.evidence_response }}</p>
                             </div>
                         </div>
                     </div>
@@ -379,18 +385,18 @@
                             <div class="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
                                 <i class="fas fa-user text-slate-300"></i>
                             </div>
-                            <div class="bg-slate-700 p-3 rounded-lg rounded-tl-none text-slate-200 max-w-2xl">
+                            <div class="bg-slate-700 p-3 rounded-lg rounded-tl-none text-slate-200 w-full">
                                 <p class="mono text-xs text-slate-400 mb-1">Input</p>
-                                <p class="whitespace-pre-wrap">{{ vuln.evidence_request[:500] }}{% if vuln.evidence_request|length > 500 %}...{% endif %}</p>
+                                <p class="whitespace-pre-wrap break-words">{{ vuln.evidence_request }}</p>
                             </div>
                         </div>
                         <div class="flex gap-3 flex-row-reverse">
                             <div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center flex-shrink-0 border border-blue-500/30">
                                 <i class="fas fa-robot text-blue-400"></i>
                             </div>
-                            <div class="bg-blue-900/20 border border-blue-900/50 p-3 rounded-lg rounded-tr-none text-blue-200 max-w-2xl">
+                            <div class="bg-blue-900/20 border border-blue-900/50 p-3 rounded-lg rounded-tr-none text-blue-200 w-full">
                                 <p class="mono text-xs text-blue-400/70 mb-1">AI Response</p>
-                                <p class="whitespace-pre-wrap">{{ vuln.evidence_response[:500] }}{% if vuln.evidence_response|length > 500 %}...{% endif %}</p>
+                                <p class="whitespace-pre-wrap break-words">{{ vuln.evidence_response }}</p>
                             </div>
                         </div>
                     </div>
