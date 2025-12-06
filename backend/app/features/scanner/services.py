@@ -7,7 +7,7 @@ from typing import Callable, List, Optional
 
 import httpx
 
-from backend.app.core import logs, settings
+from backend.app.core import logs, settings, create_judge, LLMJudge
 from .attacks import (
     AttackModule,
     # Core attacks
@@ -24,20 +24,32 @@ from .attacks import (
     IndirectInjection,
     MultiTurnAttack,
     LanguageAttack,
+    ManyShotJailbreak,
     # OWASP 2025 compliance
     OutputWeaponization,
     PromptExtraction,
     HallucinationDetection,
     ExcessiveAgency,
 )
-from .models import AttackResult, ScanResult, Vulnerability
+from .models import AttackResult, ScanResult, Vulnerability, Severity
 
 
 class ScannerService:
     """Orchestrates security scanning attacks."""
 
-    def __init__(self, competitors: Optional[List[str]] = None) -> None:
-        """Initialize scanner with attack modules."""
+    def __init__(
+        self,
+        competitors: Optional[List[str]] = None,
+        use_llm_judge: bool = False,
+        judge_provider: Optional[str] = None,
+    ) -> None:
+        """Initialize scanner with attack modules.
+
+        Args:
+            competitors: List of competitor names for QA tests
+            use_llm_judge: Whether to use LLM-as-Judge for detection
+            judge_provider: LLM provider for judge ("openai" or "anthropic")
+        """
         self.attacks: List[AttackModule] = [
             # Adversarial security attacks (Core)
             PromptInjector(),
@@ -53,12 +65,22 @@ class ScannerService:
             IndirectInjection(),
             MultiTurnAttack(),
             LanguageAttack(),
+            ManyShotJailbreak(),
             # OWASP 2025 compliance attacks
             OutputWeaponization(),
             PromptExtraction(),
             HallucinationDetection(),
             ExcessiveAgency(),
         ]
+
+        # Initialize LLM judge if requested
+        self.judge: Optional[LLMJudge] = None
+        if use_llm_judge:
+            self.judge = create_judge(provider=judge_provider)
+            if self.judge:
+                logs.info("LLM judge enabled", "scanner", {"provider": judge_provider or "auto"})
+            else:
+                logs.warning("LLM judge requested but no API key found", "scanner")
 
     async def scan(
         self,
@@ -112,6 +134,21 @@ class ScannerService:
 
                 try:
                     result = await attack.execute(client, target_url, headers)
+
+                    # LLM judge evaluation (if enabled and no vulnerabilities found)
+                    if self.judge and not result.vulnerabilities and result.raw_log:
+                        judge_vulns = await self._judge_evaluate(
+                            attack.name, result.raw_log, on_progress
+                        )
+                        if judge_vulns:
+                            result = AttackResult(
+                                attack_type=result.attack_type,
+                                status="FAIL",
+                                latency_ms=result.latency_ms,
+                                vulnerabilities=judge_vulns,
+                                raw_log=result.raw_log,
+                            )
+
                     attack_results.append(result)
                     all_vulnerabilities.extend(result.vulnerabilities)
                     all_raw_logs.extend(result.raw_log)
@@ -181,3 +218,76 @@ class ScannerService:
             attack_results=attack_results,
             raw_log=all_raw_logs,
         )
+
+    async def _judge_evaluate(
+        self,
+        attack_name: str,
+        raw_log: List[dict],
+        on_progress: Optional[Callable[[str], None]] = None,
+    ) -> List[Vulnerability]:
+        """Use LLM judge to evaluate attack results for vulnerabilities.
+
+        Args:
+            attack_name: Name of the attack being evaluated
+            raw_log: Raw log entries from the attack
+            on_progress: Optional progress callback
+
+        Returns:
+            List of vulnerabilities found by the judge
+        """
+        if not self.judge:
+            return []
+
+        vulnerabilities = []
+
+        for entry in raw_log:
+            # Extract prompt and response from log entry
+            prompt = entry.get("prompt") or entry.get("question") or entry.get("payload", "")
+            response = entry.get("response_text") or entry.get("response", "")
+
+            if not prompt or not response:
+                continue
+
+            # Skip error entries
+            if entry.get("error"):
+                continue
+
+            try:
+                if on_progress:
+                    on_progress(f"[INFO] LLM judge evaluating {attack_name}...")
+
+                result = await self.judge.evaluate(
+                    attack_prompt=prompt,
+                    ai_response=response,
+                    attack_type=attack_name,
+                )
+
+                if result.is_vulnerable:
+                    vuln_type = "System Prompt Leaked" if result.leaked_system_prompt else \
+                                "Attack Compliance" if result.complied_with_attack else \
+                                "Harmful Content Generated"
+
+                    vulnerabilities.append(
+                        Vulnerability(
+                            name=f"{attack_name}: {vuln_type} (LLM Judge)",
+                            severity=Severity.HIGH,
+                            description=(
+                                f"LLM-as-Judge detected a vulnerability that regex patterns missed. "
+                                f"Confidence: {result.confidence:.0%}. "
+                                f"The AI's response showed signs of: {vuln_type.lower()}."
+                            ),
+                            evidence_request=prompt[:500],
+                            evidence_response=result.evidence or response[:500],
+                        )
+                    )
+                    logs.warning(
+                        f"LLM judge found vulnerability",
+                        "scanner",
+                        {"attack": attack_name, "confidence": result.confidence},
+                    )
+                    break  # One vulnerability per attack is enough
+
+            except Exception as e:
+                logs.error(f"LLM judge evaluation failed", "scanner", exception=e)
+
+        return vulnerabilities

@@ -71,6 +71,22 @@ def scan(
         "-c",
         help="Number of concurrent requests",
     ),
+    llm_judge: bool = typer.Option(
+        False,
+        "--llm-judge",
+        help="Use LLM-as-Judge for more accurate vulnerability detection (requires API key)",
+    ),
+    judge_provider: Optional[str] = typer.Option(
+        None,
+        "--judge-provider",
+        help="LLM provider for judge: 'openai' or 'anthropic' (auto-detects if not set)",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Include raw AI responses in the report for analysis",
+    ),
     no_open: bool = typer.Option(
         False,
         "--no-open",
@@ -143,6 +159,8 @@ def scan(
             console.print("[yellow]Fast mode: Skipping RAG upload tests[/yellow]")
         if competitors:
             console.print(f"[dim]Competitors: {', '.join(competitors)}[/dim]")
+        if llm_judge:
+            console.print("[cyan]LLM Judge: Enabled (uses API credits)[/cyan]")
         console.print()
 
         # Sandbox mode check (for internal use)
@@ -151,7 +169,9 @@ def scan(
             raise typer.Exit(1)
 
         # Run the scan
-        result = asyncio.run(_run_scan(target, fast, headers, competitors))
+        result = asyncio.run(_run_scan(
+            target, fast, headers, competitors, llm_judge, judge_provider
+        ))
 
         # Display results
         console.print()
@@ -183,9 +203,15 @@ async def _run_scan(
     fast: bool,
     headers: dict,
     competitors: Optional[List[str]] = None,
+    use_llm_judge: bool = False,
+    judge_provider: Optional[str] = None,
 ):
     """Run the scan asynchronously with progress display."""
-    scanner = ScannerService(competitors=competitors)
+    scanner = ScannerService(
+        competitors=competitors,
+        use_llm_judge=use_llm_judge,
+        judge_provider=judge_provider,
+    )
 
     with Progress(
         SpinnerColumn(),
