@@ -19,12 +19,12 @@ function getApiInstance(): AxiosInstance {
 
 // Types
 export type SeverityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type AttackCategory = 'security' | 'reliability' | 'cost';
 
 export interface Vulnerability {
   name: string;
   severity: SeverityLevel;
   description: string;
-  remediation: string;
   evidence_request: string;
   evidence_response: string;
 }
@@ -34,6 +34,7 @@ export interface AttackResult {
   status: 'PASS' | 'FAIL' | 'ERROR';
   latency_ms: number;
   vulnerabilities: Vulnerability[];
+  category: AttackCategory;
 }
 
 export interface ScanResult {

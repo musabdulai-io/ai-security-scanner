@@ -53,7 +53,7 @@ export function TerminalUI({ logs, isRunning }: TerminalUIProps) {
         }}
       >
         <TerminalIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        <Typography variant='body2' sx={{ color: 'text.secondary' }}>
           Security Scan Output
         </Typography>
         {isRunning && (

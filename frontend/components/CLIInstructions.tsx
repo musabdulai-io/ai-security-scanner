@@ -29,7 +29,7 @@ interface TabPanelProps {
 
 function TabPanel({ children, value, index }: TabPanelProps) {
   return (
-    <div role="tabpanel" hidden={value !== index}>
+    <div role='tabpanel' hidden={value !== index}>
       {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
     </div>
   );
@@ -53,7 +53,7 @@ export function CLIInstructions({ open, onClose }: CLIInstructionsProps) {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth='md'
       fullWidth
       PaperProps={{
         sx: {
@@ -69,18 +69,18 @@ export function CLIInstructions({ open, onClose }: CLIInstructionsProps) {
           alignItems: 'center',
         }}
       >
-        <Typography variant="h6" component="span">
+        <Typography variant='h6' component='span'>
           Scan Your Own App
         </Typography>
-        <IconButton onClick={onClose} size="small">
+        <IconButton onClick={onClose} size='small'>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
       <DialogContent>
-        <Typography color="text.secondary" sx={{ mb: 3 }}>
-          Use the CLI to scan any LLM/RAG application you have permission to test.
-          Ensure you have written authorization before scanning third-party systems.
+        <Typography color='text.secondary' sx={{ mb: 3 }}>
+          Use the CLI to scan any LLM/RAG application you have permission to test. Ensure you have
+          written authorization before scanning third-party systems.
         </Typography>
 
         <Tabs
@@ -88,54 +88,39 @@ export function CLIInstructions({ open, onClose }: CLIInstructionsProps) {
           onChange={(_, v) => setTab(v)}
           sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
-          <Tab label="pipx (Recommended)" />
-          <Tab label="Docker" />
-          <Tab label="Install Globally" />
+          <Tab label='pipx (Recommended)' />
+          <Tab label='Docker' />
+          <Tab label='Install Globally' />
         </Tabs>
 
         <TabPanel value={tab} index={0}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
             Run directly without installation using pipx:
           </Typography>
-          <CodeBlock
-            code={pipxCommand}
-            id="pipx"
-            copied={copied}
-            onCopy={handleCopy}
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          <CodeBlock code={pipxCommand} id='pipx' copied={copied} onCopy={handleCopy} />
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 2 }}>
             Requires: Python 3.11+ and pipx installed
           </Typography>
         </TabPanel>
 
         <TabPanel value={tab} index={1}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
             Run using Docker (no Python required):
           </Typography>
-          <CodeBlock
-            code={dockerCommand}
-            id="docker"
-            copied={copied}
-            onCopy={handleCopy}
-          />
+          <CodeBlock code={dockerCommand} id='docker' copied={copied} onCopy={handleCopy} />
         </TabPanel>
 
         <TabPanel value={tab} index={2}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
             Install globally for repeated use:
           </Typography>
-          <CodeBlock
-            code={installCommand}
-            id="install"
-            copied={copied}
-            onCopy={handleCopy}
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 2 }}>
+          <CodeBlock code={installCommand} id='install' copied={copied} onCopy={handleCopy} />
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 2, mb: 2 }}>
             Then run scans with:
           </Typography>
           <CodeBlock
-            code="scanner scan https://your-app.com --output report.html"
-            id="usage"
+            code='scanner scan https://your-app.com --output report.html'
+            id='usage'
             copied={copied}
             onCopy={handleCopy}
           />
@@ -150,9 +135,9 @@ export function CLIInstructions({ open, onClose }: CLIInstructionsProps) {
             borderRadius: 1,
           }}
         >
-          <Typography variant="body2" sx={{ color: '#ff8c00' }}>
-            <strong>Important:</strong> Only scan applications you own or have explicit
-            written permission to test. Unauthorized scanning may violate laws and terms of service.
+          <Typography variant='body2' sx={{ color: '#ff8c00' }}>
+            <strong>Important:</strong> Only scan applications you own or have explicit written
+            permission to test. Unauthorized scanning may violate laws and terms of service.
           </Typography>
         </Box>
       </DialogContent>
@@ -185,7 +170,7 @@ function CodeBlock({ code, id, copied, onCopy }: CodeBlockProps) {
     >
       <code style={{ color: '#00ff88' }}>{code}</code>
       <Button
-        size="small"
+        size='small'
         onClick={() => onCopy(code, id)}
         sx={{
           position: 'absolute',

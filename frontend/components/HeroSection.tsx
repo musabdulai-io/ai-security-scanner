@@ -1,9 +1,19 @@
 'use client';
 
-import { Box, Button, TextField, Typography, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  CircularProgress,
+  FormControlLabel,
+  Switch,
+  Tooltip,
+} from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import HistoryIcon from '@mui/icons-material/History';
+import LockIcon from '@mui/icons-material/Lock';
 
 interface HeroSectionProps {
   sandboxUrl: string;
@@ -53,7 +63,7 @@ export function HeroSection({
 
       {/* Title */}
       <Typography
-        variant="h1"
+        variant='h1'
         sx={{
           fontSize: { xs: '2rem', md: '3rem' },
           fontWeight: 700,
@@ -69,7 +79,7 @@ export function HeroSection({
 
       {/* Subtitle */}
       <Typography
-        variant="h2"
+        variant='h2'
         sx={{
           fontSize: { xs: '1rem', md: '1.25rem' },
           color: 'text.secondary',
@@ -78,8 +88,8 @@ export function HeroSection({
           mx: 'auto',
         }}
       >
-        Audit LLM and RAG applications for security vulnerabilities.
-        Test for prompt injection, RAG poisoning, and PII leakage.
+        Audit LLM and RAG applications for security vulnerabilities. Test for prompt injection, RAG
+        poisoning, and PII leakage.
       </Typography>
 
       {/* Target URL Input */}
@@ -87,14 +97,14 @@ export function HeroSection({
         sx={{
           maxWidth: 500,
           mx: 'auto',
-          mb: 3,
+          mb: 2,
         }}
       >
         <TextField
           fullWidth
           value={sandboxUrl}
-          label="Target URL (Sandbox)"
-          variant="outlined"
+          label='Target URL (Sandbox)'
+          variant='outlined'
           InputProps={{
             readOnly: true,
           }}
@@ -106,11 +116,32 @@ export function HeroSection({
         />
       </Box>
 
+      {/* Twin Toggle (Placeholder - disabled until secure-rag deployed) */}
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+        <Tooltip title='Secure RAG target coming soon' placement='bottom'>
+          <FormControlLabel
+            control={<Switch disabled checked={false} size='small' />}
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, opacity: 0.5 }}>
+                <Typography variant='body2' color='text.secondary'>
+                  Standard RAG
+                </Typography>
+                <LockIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                <Typography variant='caption' color='text.disabled'>
+                  Secure RAG
+                </Typography>
+              </Box>
+            }
+            sx={{ opacity: 0.6 }}
+          />
+        </Tooltip>
+      </Box>
+
       {/* Action Buttons */}
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
         <Button
-          variant="contained"
-          size="large"
+          variant='contained'
+          size='large'
           onClick={onStartScan}
           disabled={isDisabled}
           startIcon={
@@ -131,8 +162,8 @@ export function HeroSection({
 
         {hasPreviousResult && onViewPreviousResult && (
           <Button
-            variant="outlined"
-            size="large"
+            variant='outlined'
+            size='large'
             onClick={onViewPreviousResult}
             disabled={isScanning}
             startIcon={<HistoryIcon />}
@@ -149,7 +180,7 @@ export function HeroSection({
 
       {/* Info Text */}
       <Typography
-        variant="body2"
+        variant='body2'
         sx={{
           mt: 2,
           color: 'text.secondary',
