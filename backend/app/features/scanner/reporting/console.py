@@ -27,13 +27,13 @@ def show_progress(message: str) -> None:
         console.print(f"[cyan]{message}[/cyan]")
 
 
-def show_attack_table(results: List[AttackResult]) -> None:
-    """Display attack results in a formatted table."""
-    table = Table(title="Attack Results", show_header=True, header_style="bold cyan")
+def _create_attack_table(title: str, results: List[AttackResult]) -> Table:
+    """Create a table for a category of attacks."""
+    table = Table(title=title, show_header=True, header_style="bold cyan")
 
-    table.add_column("Attack Type", style="cyan", width=20)
-    table.add_column("Status", justify="center", width=12)
-    table.add_column("Vulnerabilities", justify="center", width=15)
+    table.add_column("Attack Type", style="cyan", width=25)
+    table.add_column("Status", justify="center", width=10)
+    table.add_column("Issues", justify="center", width=8)
     table.add_column("Latency", justify="right", width=10)
 
     for result in results:
@@ -59,8 +59,50 @@ def show_attack_table(results: List[AttackResult]) -> None:
             f"{result.latency_ms}ms",
         )
 
+    return table
+
+
+def show_attack_table(results: List[AttackResult]) -> None:
+    """Display attack results in formatted tables grouped by category."""
+    # Group by category
+    security_attacks = []
+    reliability_attacks = []
+    cost_attacks = []
+
+    for result in results:
+        category = getattr(result, "category", None)
+        if category:
+            cat_value = category.value if hasattr(category, "value") else str(category)
+        else:
+            cat_value = "security"
+
+        if cat_value == "security":
+            security_attacks.append(result)
+        elif cat_value == "reliability":
+            reliability_attacks.append(result)
+        elif cat_value == "cost":
+            cost_attacks.append(result)
+        else:
+            security_attacks.append(result)
+
     console.print()
-    console.print(table)
+
+    # Security attacks
+    if security_attacks:
+        table = _create_attack_table("Security Attacks", security_attacks)
+        console.print(table)
+        console.print()
+
+    # Reliability attacks
+    if reliability_attacks:
+        table = _create_attack_table("Reliability Tests", reliability_attacks)
+        console.print(table)
+        console.print()
+
+    # Cost attacks
+    if cost_attacks:
+        table = _create_attack_table("Cost & Performance", cost_attacks)
+        console.print(table)
 
 
 def show_summary(result: ScanResult) -> None:
@@ -71,6 +113,35 @@ def show_summary(result: ScanResult) -> None:
     severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
     for vuln in result.vulnerabilities:
         severity_counts[vuln.severity.value] += 1
+
+    # Count by category
+    security_count = 0
+    reliability_count = 0
+    cost_count = 0
+
+    # Build category mapping from attack results
+    attack_category_map = {}
+    for attack in result.attack_results:
+        category = getattr(attack, "category", None)
+        if category:
+            cat_value = category.value if hasattr(category, "value") else str(category)
+        else:
+            cat_value = "security"
+        attack_category_map[attack.attack_type] = cat_value
+
+    for vuln in result.vulnerabilities:
+        vuln_category = "security"
+        for attack_type, category in attack_category_map.items():
+            if attack_type.lower() in vuln.name.lower():
+                vuln_category = category
+                break
+
+        if vuln_category == "reliability":
+            reliability_count += 1
+        elif vuln_category == "cost":
+            cost_count += 1
+        else:
+            security_count += 1
 
     if vuln_count > 0:
         # Build severity breakdown
@@ -86,9 +157,20 @@ def show_summary(result: ScanResult) -> None:
 
         severity_str = "  ".join(severity_lines) if severity_lines else ""
 
+        # Build category breakdown
+        category_lines = []
+        if security_count:
+            category_lines.append(f"Security: {security_count}")
+        if reliability_count:
+            category_lines.append(f"Reliability: {reliability_count}")
+        if cost_count:
+            category_lines.append(f"Cost: {cost_count}")
+        category_str = "  |  ".join(category_lines) if category_lines else ""
+
         content = (
-            f"[bold red]{vuln_count} VULNERABILITIES FOUND[/bold red]\n\n"
-            f"{severity_str}\n\n"
+            f"[bold red]{vuln_count} ISSUES FOUND[/bold red]\n\n"
+            f"{severity_str}\n"
+            f"{category_str}\n\n"
             f"Target: {result.target_url}\n"
             f"Duration: {result.duration_seconds:.2f}s\n"
             f"Scan ID: {result.scan_id[:8]}"
@@ -102,7 +184,7 @@ def show_summary(result: ScanResult) -> None:
         )
     else:
         content = (
-            f"[bold green]NO VULNERABILITIES FOUND[/bold green]\n\n"
+            f"[bold green]NO ISSUES FOUND[/bold green]\n\n"
             f"Target: {result.target_url}\n"
             f"Duration: {result.duration_seconds:.2f}s\n"
             f"Scan ID: {result.scan_id[:8]}"
@@ -125,24 +207,75 @@ def show_error(message: str) -> None:
 
 
 def show_vulnerabilities_detail(result: ScanResult) -> None:
-    """Show detailed vulnerability information."""
+    """Show detailed vulnerability information grouped by category."""
     if not result.vulnerabilities:
         return
 
-    console.print("\n[bold]Vulnerability Details:[/bold]\n")
+    # Build category mapping from attack results
+    attack_category_map = {}
+    for attack in result.attack_results:
+        category = getattr(attack, "category", None)
+        if category:
+            cat_value = category.value if hasattr(category, "value") else str(category)
+        else:
+            cat_value = "security"
+        attack_category_map[attack.attack_type] = cat_value
 
-    for i, vuln in enumerate(result.vulnerabilities, 1):
-        # Severity color
-        severity_colors = {
-            "CRITICAL": "red",
-            "HIGH": "orange1",
-            "MEDIUM": "yellow",
-            "LOW": "blue",
-        }
-        color = severity_colors.get(vuln.severity.value, "white")
+    # Group vulnerabilities by category
+    security_vulns = []
+    reliability_vulns = []
+    cost_vulns = []
 
-        console.print(f"[bold]{i}. {vuln.name}[/bold]")
-        console.print(f"   Severity: [{color}]{vuln.severity.value}[/{color}]")
-        console.print(f"   {vuln.description}")
-        console.print(f"   [cyan]→ {settings.CTA_TEXT}: {settings.CTA_URL}[/cyan]")
-        console.print()
+    for vuln in result.vulnerabilities:
+        vuln_category = "security"
+        for attack_type, category in attack_category_map.items():
+            if attack_type.lower() in vuln.name.lower():
+                vuln_category = category
+                break
+
+        if vuln_category == "reliability":
+            reliability_vulns.append(vuln)
+        elif vuln_category == "cost":
+            cost_vulns.append(vuln)
+        else:
+            security_vulns.append(vuln)
+
+    severity_colors = {
+        "CRITICAL": "red",
+        "HIGH": "orange1",
+        "MEDIUM": "yellow",
+        "LOW": "blue",
+    }
+
+    # Security vulnerabilities
+    if security_vulns:
+        console.print(f"\n[bold red]Security Vulnerabilities ({len(security_vulns)})[/bold red]\n")
+        for i, vuln in enumerate(security_vulns, 1):
+            color = severity_colors.get(vuln.severity.value, "white")
+            console.print(f"[bold]{i}. {vuln.name}[/bold]")
+            console.print(f"   Severity: [{color}]{vuln.severity.value}[/{color}]")
+            console.print(f"   {vuln.description}")
+            console.print(f"   [cyan]→ {settings.CTA_TEXT}: {settings.CTA_URL}[/cyan]")
+            console.print()
+
+    # Reliability issues
+    if reliability_vulns:
+        console.print(f"\n[bold yellow]Reliability Issues ({len(reliability_vulns)})[/bold yellow]\n")
+        for i, vuln in enumerate(reliability_vulns, 1):
+            color = severity_colors.get(vuln.severity.value, "white")
+            console.print(f"[bold]{i}. {vuln.name}[/bold]")
+            console.print(f"   Severity: [{color}]{vuln.severity.value}[/{color}]")
+            console.print(f"   {vuln.description}")
+            console.print(f"   [cyan]→ {settings.CTA_TEXT}: {settings.CTA_URL}[/cyan]")
+            console.print()
+
+    # Cost issues
+    if cost_vulns:
+        console.print(f"\n[bold blue]Cost & Performance Issues ({len(cost_vulns)})[/bold blue]\n")
+        for i, vuln in enumerate(cost_vulns, 1):
+            color = severity_colors.get(vuln.severity.value, "white")
+            console.print(f"[bold]{i}. {vuln.name}[/bold]")
+            console.print(f"   Severity: [{color}]{vuln.severity.value}[/{color}]")
+            console.print(f"   {vuln.description}")
+            console.print(f"   [cyan]→ {settings.CTA_TEXT}: {settings.CTA_URL}[/cyan]")
+            console.print()
