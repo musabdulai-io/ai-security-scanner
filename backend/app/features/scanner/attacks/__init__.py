@@ -24,6 +24,9 @@ from .excessive_agency import ExcessiveAgency
 from .table_parsing import TableParsingTest
 from .retrieval_precision import RetrievalPrecisionTest
 from .efficiency_analysis import EfficiencyAnalysis
+# Additional OWASP coverage
+from .tool_abuse import ToolAbuseAttack
+from .resource_exhaustion import ResourceExhaustionAttack
 
 __all__ = [
     "AttackModule",
@@ -51,4 +54,7 @@ __all__ = [
     "TableParsingTest",
     "RetrievalPrecisionTest",
     "EfficiencyAnalysis",
+    # Additional OWASP coverage
+    "ToolAbuseAttack",
+    "ResourceExhaustionAttack",
 ]
