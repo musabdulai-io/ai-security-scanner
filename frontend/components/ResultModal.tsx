@@ -9,13 +9,22 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import DownloadIcon from '@mui/icons-material/Download';
 import TerminalIcon from '@mui/icons-material/Terminal';
-import type { ScanResult, SeverityLevel } from '@/lib/api';
+import ShieldIcon from '@mui/icons-material/Shield';
+import SpeedIcon from '@mui/icons-material/Speed';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import type { ScanResult, SeverityLevel, AttackResult, AttackCategory } from '@/lib/api';
 
 interface ResultModalProps {
   open: boolean;
@@ -31,6 +40,39 @@ const severityColors: Record<SeverityLevel, string> = {
   LOW: '#4488ff',
 };
 
+const statusColors: Record<string, string> = {
+  FAIL: '#ff4444',
+  ERROR: '#ff8c00',
+  PASS: '#00ff88',
+};
+
+const categoryConfig: Record<
+  AttackCategory,
+  { label: string; color: string; icon: React.ReactNode }
+> = {
+  security: { label: 'Security', color: '#ff4444', icon: <ShieldIcon sx={{ fontSize: 16 }} /> },
+  reliability: {
+    label: 'Reliability',
+    color: '#ff8c00',
+    icon: <SpeedIcon sx={{ fontSize: 16 }} />,
+  },
+  cost: { label: 'Cost', color: '#4488ff', icon: <AttachMoneyIcon sx={{ fontSize: 16 }} /> },
+};
+
+// Group attacks by category
+const groupAttacksByCategory = (attacks: AttackResult[]) => {
+  const security = attacks.filter(a => a.category === 'security');
+  const reliability = attacks.filter(a => a.category === 'reliability');
+  const cost = attacks.filter(a => a.category === 'cost');
+  return { security, reliability, cost };
+};
+
+// Sort attacks: FAIL first, then ERROR, then PASS
+const sortAttacks = (attacks: AttackResult[]) => {
+  const order: Record<string, number> = { FAIL: 0, ERROR: 1, PASS: 2 };
+  return [...attacks].sort((a, b) => order[a.status] - order[b.status]);
+};
+
 export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalProps) {
   if (!result) return null;
 
@@ -42,7 +84,7 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
       acc[vuln.severity] = (acc[vuln.severity] || 0) + 1;
       return acc;
     },
-    {} as Record<SeverityLevel, number>
+    {} as Record<SeverityLevel, number>,
   );
 
   const handleDownloadReport = () => {
@@ -63,7 +105,7 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth='sm'
       fullWidth
       PaperProps={{
         sx: {
@@ -92,7 +134,7 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
           )}
         </Box>
         <Typography
-          variant="h5"
+          variant='h5'
           sx={{
             color: hasVulnerabilities ? 'error.main' : 'success.main',
             fontWeight: 700,
@@ -111,7 +153,7 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
           }}
         >
           <Typography
-            variant="h2"
+            variant='h2'
             sx={{
               fontSize: '3rem',
               fontWeight: 700,
@@ -120,10 +162,8 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
           >
             {result.vulnerabilities.length}
           </Typography>
-          <Typography color="text.secondary">
-            {result.vulnerabilities.length === 1
-              ? 'vulnerability found'
-              : 'vulnerabilities found'}
+          <Typography color='text.secondary'>
+            {result.vulnerabilities.length === 1 ? 'vulnerability found' : 'vulnerabilities found'}
           </Typography>
         </Box>
 
@@ -138,21 +178,20 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
               flexWrap: 'wrap',
             }}
           >
-            {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as SeverityLevel[]).map(
-              (severity) =>
-                severityCounts[severity] ? (
-                  <Chip
-                    key={severity}
-                    label={`${severity}: ${severityCounts[severity]}`}
-                    size="small"
-                    sx={{
-                      backgroundColor: `${severityColors[severity]}20`,
-                      color: severityColors[severity],
-                      border: `1px solid ${severityColors[severity]}`,
-                      fontWeight: 600,
-                    }}
-                  />
-                ) : null
+            {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as SeverityLevel[]).map(severity =>
+              severityCounts[severity] ? (
+                <Chip
+                  key={severity}
+                  label={`${severity}: ${severityCounts[severity]}`}
+                  size='small'
+                  sx={{
+                    backgroundColor: `${severityColors[severity]}20`,
+                    color: severityColors[severity],
+                    border: `1px solid ${severityColors[severity]}`,
+                    fontWeight: 600,
+                  }}
+                />
+              ) : null,
             )}
           </Box>
         )}
@@ -160,17 +199,88 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
         <Divider sx={{ mb: 3 }} />
 
         {/* Scan Details */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant='body2' color='text.secondary' gutterBottom>
             Target: {result.target_url}
           </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Typography variant='body2' color='text.secondary' gutterBottom>
             Duration: {result.duration_seconds.toFixed(2)}s
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant='body2' color='text.secondary'>
             Scan ID: {result.scan_id.slice(0, 8)}...
           </Typography>
         </Box>
+
+        {/* Attack Results by Category */}
+        {result.attack_results && result.attack_results.length > 0 && (
+          <>
+            <Divider sx={{ mb: 2 }} />
+            <Typography variant='subtitle2' sx={{ mb: 2, fontWeight: 600 }}>
+              Attack Results
+            </Typography>
+            {(['security', 'reliability', 'cost'] as AttackCategory[]).map(category => {
+              const categoryAttacks = sortAttacks(
+                result.attack_results.filter(a => a.category === category),
+              );
+              if (categoryAttacks.length === 0) return null;
+              const config = categoryConfig[category];
+              return (
+                <Box key={category} sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Box sx={{ color: config.color }}>{config.icon}</Box>
+                    <Typography variant='body2' sx={{ fontWeight: 600, color: config.color }}>
+                      {config.label}
+                    </Typography>
+                  </Box>
+                  <TableContainer>
+                    <Table size='small'>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ color: 'text.secondary', py: 0.5 }}>Attack</TableCell>
+                          <TableCell sx={{ color: 'text.secondary', py: 0.5 }} align='center'>
+                            Status
+                          </TableCell>
+                          <TableCell sx={{ color: 'text.secondary', py: 0.5 }} align='center'>
+                            Issues
+                          </TableCell>
+                          <TableCell sx={{ color: 'text.secondary', py: 0.5 }} align='right'>
+                            Latency
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {categoryAttacks.map(attack => (
+                          <TableRow key={attack.attack_type}>
+                            <TableCell sx={{ py: 0.5 }}>{attack.attack_type}</TableCell>
+                            <TableCell align='center' sx={{ py: 0.5 }}>
+                              <Chip
+                                label={attack.status}
+                                size='small'
+                                sx={{
+                                  backgroundColor: `${statusColors[attack.status]}20`,
+                                  color: statusColors[attack.status],
+                                  fontWeight: 600,
+                                  fontSize: '0.7rem',
+                                  height: 20,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align='center' sx={{ py: 0.5 }}>
+                              {attack.vulnerabilities.length}
+                            </TableCell>
+                            <TableCell align='right' sx={{ py: 0.5 }}>
+                              {attack.latency_ms}ms
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              );
+            })}
+          </>
+        )}
       </DialogContent>
 
       <DialogActions
@@ -182,22 +292,17 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
         }}
       >
         <Button
-          variant="contained"
+          variant='contained'
           fullWidth
           startIcon={<DownloadIcon />}
           onClick={handleDownloadReport}
         >
           Download Report
         </Button>
-        <Button
-          variant="outlined"
-          fullWidth
-          startIcon={<TerminalIcon />}
-          onClick={onShowCLI}
-        >
+        <Button variant='outlined' fullWidth startIcon={<TerminalIcon />} onClick={onShowCLI}>
           Scan Your Own App (CLI)
         </Button>
-        <Button variant="text" fullWidth onClick={onClose}>
+        <Button variant='text' fullWidth onClick={onClose}>
           Close
         </Button>
       </DialogActions>
@@ -213,9 +318,21 @@ function generateReportHTML(result: ScanResult): string {
     LOW: '#4488ff',
   };
 
+  const statusColorsHTML: Record<string, string> = {
+    FAIL: '#ff4444',
+    ERROR: '#ff8c00',
+    PASS: '#00ff88',
+  };
+
+  const categoryLabels: Record<string, { label: string; color: string }> = {
+    security: { label: 'Security', color: '#ff4444' },
+    reliability: { label: 'Reliability', color: '#ff8c00' },
+    cost: { label: 'Cost', color: '#4488ff' },
+  };
+
   const vulnerabilitiesHTML = result.vulnerabilities
     .map(
-      (vuln) => `
+      vuln => `
       <div style="background: #1e1e1e; border-radius: 8px; padding: 16px; margin-bottom: 16px; border-left: 4px solid ${severityColors[vuln.severity]};">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <h3 style="margin: 0; color: white;">${vuln.name}</h3>
@@ -226,18 +343,62 @@ function generateReportHTML(result: ScanResult): string {
           <div style="color: #00ff88; font-size: 12px; margin-bottom: 4px;">Request</div>
           <pre style="color: white; margin: 0; white-space: pre-wrap; font-family: monospace;">${vuln.evidence_request}</pre>
         </div>
-        <div style="background: #0a0a0a; padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+        <div style="background: #0a0a0a; padding: 12px; border-radius: 6px;">
           <div style="color: #00ff88; font-size: 12px; margin-bottom: 4px;">Response</div>
           <pre style="color: white; margin: 0; white-space: pre-wrap; font-family: monospace;">${vuln.evidence_response}</pre>
         </div>
-        <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 6px; border: 1px solid rgba(0, 255, 136, 0.2);">
-          <div style="color: #00ff88; font-size: 12px; margin-bottom: 4px;">Remediation</div>
-          <p style="color: #a0a0a0; margin: 0;">${vuln.remediation}</p>
-        </div>
       </div>
-    `
+    `,
     )
     .join('');
+
+  // Generate attack results table by category
+  const attackResultsHTML =
+    result.attack_results && result.attack_results.length > 0
+      ? (['security', 'reliability', 'cost'] as const)
+          .map(category => {
+            const attacks = result.attack_results
+              .filter(a => a.category === category)
+              .sort((a, b) => {
+                const order: Record<string, number> = { FAIL: 0, ERROR: 1, PASS: 2 };
+                return order[a.status] - order[b.status];
+              });
+            if (attacks.length === 0) return '';
+            const config = categoryLabels[category];
+            return `
+            <div style="margin-bottom: 24px;">
+              <h3 style="color: ${config.color}; margin-bottom: 12px;">${config.label}</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 1px solid #333;">
+                    <th style="text-align: left; padding: 8px; color: #a0a0a0;">Attack</th>
+                    <th style="text-align: center; padding: 8px; color: #a0a0a0;">Status</th>
+                    <th style="text-align: center; padding: 8px; color: #a0a0a0;">Issues</th>
+                    <th style="text-align: right; padding: 8px; color: #a0a0a0;">Latency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${attacks
+                    .map(
+                      attack => `
+                    <tr style="border-bottom: 1px solid #222;">
+                      <td style="padding: 8px; color: white;">${attack.attack_type}</td>
+                      <td style="text-align: center; padding: 8px;">
+                        <span style="background: ${statusColorsHTML[attack.status]}20; color: ${statusColorsHTML[attack.status]}; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600;">${attack.status}</span>
+                      </td>
+                      <td style="text-align: center; padding: 8px; color: white;">${attack.vulnerabilities.length}</td>
+                      <td style="text-align: right; padding: 8px; color: #a0a0a0;">${attack.latency_ms}ms</td>
+                    </tr>
+                  `,
+                    )
+                    .join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+          })
+          .join('')
+      : '';
 
   return `<!DOCTYPE html>
 <html>
@@ -273,6 +434,7 @@ function generateReportHTML(result: ScanResult): string {
       <div class="meta-item"><div class="meta-label">Timestamp</div>${new Date(result.timestamp).toLocaleString()}</div>
       <div class="meta-item"><div class="meta-label">Duration</div>${result.duration_seconds.toFixed(2)}s</div>
     </div>
+    ${attackResultsHTML ? `<h2>Attack Results</h2>${attackResultsHTML}` : ''}
     ${result.vulnerabilities.length > 0 ? `<h2>Vulnerability Details</h2>${vulnerabilitiesHTML}` : ''}
     <footer style="text-align: center; color: #a0a0a0; margin-top: 40px; padding-top: 20px; border-top: 1px solid #333;">
       Generated by AI Security Scanner

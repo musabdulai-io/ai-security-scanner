@@ -75,12 +75,12 @@ export default function Home() {
       const { scan_id } = await startScan(sandboxUrl);
       const eventSource = createScanEventSource(scan_id);
 
-      eventSource.onmessage = (event) => {
+      eventSource.onmessage = event => {
         try {
           const data = JSON.parse(event.data);
 
           if (data.type === 'log') {
-            setLogs((prev) => [...prev, data.message]);
+            setLogs(prev => [...prev, data.message]);
           } else if (data.type === 'result') {
             setResult(data.data);
             saveResult(scan_id, data.data); // Persist to localStorage
@@ -104,9 +104,7 @@ export default function Home() {
       };
     } catch (e: unknown) {
       const errorMessage =
-        e instanceof Error
-          ? e.message
-          : 'Failed to start scan. Please try again.';
+        e instanceof Error ? e.message : 'Failed to start scan. Please try again.';
 
       // Check for axios error response
       if (typeof e === 'object' && e !== null && 'response' in e) {
@@ -137,7 +135,7 @@ export default function Home() {
         backgroundColor: 'background.default',
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth='lg'>
         <HeroSection
           sandboxUrl={sandboxUrl}
           onStartScan={handleStartScan}
@@ -150,7 +148,7 @@ export default function Home() {
 
         {error && (
           <Alert
-            severity="error"
+            severity='error'
             onClose={() => setError(null)}
             sx={{ maxWidth: 600, mx: 'auto', mb: 2 }}
           >
@@ -158,9 +156,7 @@ export default function Home() {
           </Alert>
         )}
 
-        {(isScanning || logs.length > 0) && (
-          <TerminalUI logs={logs} isRunning={isScanning} />
-        )}
+        {(isScanning || logs.length > 0) && <TerminalUI logs={logs} isRunning={isScanning} />}
 
         <ResultModal
           open={showResult}
@@ -176,28 +172,28 @@ export default function Home() {
 
         {/* Footer */}
         <Box
-          component="footer"
+          component='footer'
           sx={{
             textAlign: 'center',
             py: 4,
             color: 'text.secondary',
           }}
         >
-          <Typography variant="body2">
+          <Typography variant='body2'>
             Built by{' '}
             <a
-              href="https://musabdulai.com"
-              target="_blank"
-              rel="noopener noreferrer"
+              href='https://musabdulai.com'
+              target='_blank'
+              rel='noopener noreferrer'
               style={{ color: '#00ff88' }}
             >
               Musah Abdulai
             </a>
             {' | '}
             <a
-              href="https://github.com/musabdulai-io/ai-security-scanner"
-              target="_blank"
-              rel="noopener noreferrer"
+              href='https://github.com/musabdulai-io/ai-security-scanner'
+              target='_blank'
+              rel='noopener noreferrer'
               style={{ color: '#00ff88' }}
             >
               GitHub
