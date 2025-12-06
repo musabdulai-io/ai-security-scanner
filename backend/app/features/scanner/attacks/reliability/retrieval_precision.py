@@ -7,8 +7,8 @@ from typing import Optional
 
 import httpx
 
-from .base import AttackModule
-from ..models import AttackResult, Vulnerability, Severity
+from ..base import AttackModule
+from ...models import AttackResult, Vulnerability, Severity
 
 
 class RetrievalPrecisionTest(AttackModule):
@@ -20,6 +20,7 @@ class RetrievalPrecisionTest(AttackModule):
 
     name = "Retrieval Precision"
     description = "Tests if RAG retrieves correct info despite similar distractors"
+    category = "reliability"
 
     # Test cases with specific answers to verify
     PRECISION_TESTS = [

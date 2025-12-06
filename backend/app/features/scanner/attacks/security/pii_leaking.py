@@ -9,8 +9,8 @@ from typing import Dict, List, Optional, Set, Tuple
 import httpx
 
 from backend.app.core import logs
-from ..models import AttackResult, Vulnerability, Severity
-from .base import AttackModule
+from ...models import AttackResult, Vulnerability, Severity
+from ..base import AttackModule
 
 
 def luhn_check(card_number: str) -> bool:

@@ -1,60 +1,78 @@
 # backend/app/features/scanner/attacks/__init__.py
-"""Attack modules for security scanning."""
+"""Attack modules for security scanning - organized by category."""
 
 from .base import AttackModule
-# Adversarial security attacks
-from .prompt_injection import PromptInjector
-from .rag_poisoning import RAGPoisoner
-from .pii_leaking import PIILeaker
-# Reliability / QA checks
-from .reliability_checks import CompetitorTrap, PricingTrap, OffTopicHandler
-# Advanced attacks (2024-2025 research)
-from .encoding_attacks import EncodingAttack
-from .structure_attacks import StructureAttack
-from .indirect_injection import IndirectInjection
-from .multi_turn_attacks import MultiTurnAttack
-from .language_attacks import LanguageAttack
-from .many_shot_jailbreak import ManyShotJailbreak
-# OWASP 2025 compliance attacks
-from .output_weaponization import OutputWeaponization
-from .prompt_extraction import PromptExtraction
-from .hallucination_detection import HallucinationDetection
-from .excessive_agency import ExcessiveAgency
-# Quality & reliability tests
-from .table_parsing import TableParsingTest
-from .retrieval_precision import RetrievalPrecisionTest
-from .efficiency_analysis import EfficiencyAnalysis
-# Additional OWASP coverage
-from .tool_abuse import ToolAbuseAttack
-from .resource_exhaustion import ResourceExhaustionAttack
+
+# Security attacks (core vulnerability testing)
+from .security import (
+    PromptInjector,
+    PIILeaker,
+    RAGPoisoner,
+    PromptExtraction,
+    OutputWeaponization,
+    ExcessiveAgency,
+    ToolAbuseAttack,
+    EncodingAttack,
+    StructureAttack,
+    IndirectInjection,
+    MultiTurnAttack,
+    LanguageAttack,
+    ManyShotJailbreak,
+    ContentContinuationAttack,
+    RefusalBypassTest,
+    SECURITY_ATTACKS,
+)
+
+# Reliability attacks (business logic and quality testing)
+from .reliability import (
+    HallucinationDetection,
+    TableParsingTest,
+    RetrievalPrecisionTest,
+    CompetitorTrap,
+    PricingTrap,
+    OffTopicHandler,
+    BrandSafetyTest,
+    RELIABILITY_ATTACKS,
+)
+
+# Cost attacks (resource and efficiency testing)
+from .cost import (
+    EfficiencyAnalysis,
+    ResourceExhaustionAttack,
+    COST_ATTACKS,
+)
 
 __all__ = [
     "AttackModule",
-    # Core attacks
+    # Security attacks
     "PromptInjector",
-    "RAGPoisoner",
     "PIILeaker",
-    # QA checks
-    "CompetitorTrap",
-    "PricingTrap",
-    "OffTopicHandler",
-    # Advanced attacks
+    "RAGPoisoner",
+    "PromptExtraction",
+    "OutputWeaponization",
+    "ExcessiveAgency",
+    "ToolAbuseAttack",
     "EncodingAttack",
     "StructureAttack",
     "IndirectInjection",
     "MultiTurnAttack",
     "LanguageAttack",
     "ManyShotJailbreak",
-    # OWASP 2025 compliance
-    "OutputWeaponization",
-    "PromptExtraction",
+    "ContentContinuationAttack",
+    "RefusalBypassTest",
+    # Reliability attacks
     "HallucinationDetection",
-    "ExcessiveAgency",
-    # Quality tests
     "TableParsingTest",
     "RetrievalPrecisionTest",
+    "CompetitorTrap",
+    "PricingTrap",
+    "OffTopicHandler",
+    "BrandSafetyTest",
+    # Cost attacks
     "EfficiencyAnalysis",
-    # Additional OWASP coverage
-    "ToolAbuseAttack",
     "ResourceExhaustionAttack",
+    # Category lists
+    "SECURITY_ATTACKS",
+    "RELIABILITY_ATTACKS",
+    "COST_ATTACKS",
 ]

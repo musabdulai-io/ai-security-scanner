@@ -11,8 +11,8 @@ from typing import List, Optional, Tuple
 import httpx
 
 from backend.app.core import logs
-from ..models import AttackResult, Vulnerability, Severity
-from .base import AttackModule
+from ...models import AttackResult, Vulnerability, Severity
+from ..base import AttackModule
 
 
 class RAGPoisoner(AttackModule):

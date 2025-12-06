@@ -7,8 +7,8 @@ from typing import Optional
 
 import httpx
 
-from .base import AttackModule
-from ..models import AttackResult, Vulnerability, Severity
+from ..base import AttackModule
+from ...models import AttackResult, Vulnerability, Severity
 
 
 class TableParsingTest(AttackModule):
@@ -20,6 +20,7 @@ class TableParsingTest(AttackModule):
 
     name = "Table Parsing"
     description = "Tests if tables in documents are correctly parsed and queryable"
+    category = "reliability"
 
     # Test queries that require structured data understanding
     TABLE_QUERIES = [
