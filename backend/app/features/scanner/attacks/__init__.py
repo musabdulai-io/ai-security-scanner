@@ -20,6 +20,10 @@ from .output_weaponization import OutputWeaponization
 from .prompt_extraction import PromptExtraction
 from .hallucination_detection import HallucinationDetection
 from .excessive_agency import ExcessiveAgency
+# Quality & reliability tests
+from .table_parsing import TableParsingTest
+from .retrieval_precision import RetrievalPrecisionTest
+from .efficiency_analysis import EfficiencyAnalysis
 
 __all__ = [
     "AttackModule",
@@ -43,4 +47,8 @@ __all__ = [
     "PromptExtraction",
     "HallucinationDetection",
     "ExcessiveAgency",
+    # Quality tests
+    "TableParsingTest",
+    "RetrievalPrecisionTest",
+    "EfficiencyAnalysis",
 ]
