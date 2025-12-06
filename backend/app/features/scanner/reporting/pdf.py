@@ -1,6 +1,8 @@
 # backend/app/features/scanner/reporting/pdf.py
 """PDF report generator using WeasyPrint."""
 
+import os
+import sys
 from pathlib import Path
 from typing import Dict, List
 
@@ -9,6 +11,28 @@ from jinja2 import Environment, FileSystemLoader
 from backend.app.core import logs
 from backend.app.core.config import settings
 from ..models import ScanResult, AttackResult
+
+
+def _configure_weasyprint_macos():
+    """Configure library paths for WeasyPrint on macOS.
+
+    WeasyPrint requires native libraries (glib, pango, etc.) that are installed
+    via Homebrew. This function adds Homebrew lib paths to DYLD_LIBRARY_PATH
+    so the dynamic linker can find them.
+
+    Works with: poetry, pipx, docker, venv, deployed environments.
+    """
+    if sys.platform != "darwin":
+        return
+
+    # Homebrew paths: /opt/homebrew/lib (Apple Silicon) or /usr/local/lib (Intel)
+    homebrew_paths = ["/opt/homebrew/lib", "/usr/local/lib"]
+    current_path = os.environ.get("DYLD_LIBRARY_PATH", "")
+
+    paths_to_add = [p for p in homebrew_paths if os.path.isdir(p) and p not in current_path]
+    if paths_to_add:
+        new_path = ":".join(paths_to_add + ([current_path] if current_path else []))
+        os.environ["DYLD_LIBRARY_PATH"] = new_path
 
 # Sorting orders
 STATUS_ORDER = {"FAIL": 0, "ERROR": 1, "PASS": 2}
@@ -42,6 +66,9 @@ def generate_pdf_report(
     Returns:
         Absolute path to the generated report file
     """
+    # Configure library paths before importing weasyprint
+    _configure_weasyprint_macos()
+
     try:
         from weasyprint import HTML, CSS
     except (ImportError, OSError) as e:
