@@ -2,7 +2,7 @@
 
 ## Safe Harbor for Demo Environment
 
-We encourage security research on our deployed demo at `https://scanner.musabdulai.com`.
+We encourage security research on our deployed demo at `https://audit.musabdulai.com`.
 
 ### Scope
 

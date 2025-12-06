@@ -120,6 +120,13 @@ setup_backend() {
     .venv/bin/pip install -r backend/requirements.txt -q
   fi
 
+  # macOS: Check WeasyPrint dependencies for PDF generation
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    if ! brew list glib &>/dev/null 2>&1; then
+      echo -e "${YELLOW}Note: PDF generation requires: brew install glib pango gdk-pixbuf libffi${NC}"
+    fi
+  fi
+
   echo -e "${GREEN}✓ Backend setup complete${NC}"
 }
 

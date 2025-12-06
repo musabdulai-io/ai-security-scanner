@@ -78,10 +78,27 @@ scanner info                       Show configuration
 | `--header, -H` | Custom HTTP headers |
 | `--concurrency, -c` | Concurrent requests (default: 5) |
 | `--no-open` | Don't open report in browser |
+| `--pdf` | Generate PDF report (in addition to HTML) |
+| `--verbose, -v` | Include raw AI responses in report |
+| `--llm-judge` | Use LLM-as-Judge for better detection (requires API key) |
+
+### PDF Generation
+
+To generate PDF reports (`--pdf` flag), install system libraries:
+
+```bash
+# macOS
+brew install glib pango gdk-pixbuf libffi
+
+# Ubuntu/Debian
+sudo apt install libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev libcairo2
+```
+
+Docker images include these dependencies automatically.
 
 ## Web Demo
 
-Try the live demo at [scanner.musabdulai.com](https://scanner.musabdulai.com)
+Try the live demo at [audit.musabdulai.com](https://audit.musabdulai.com)
 
 The web demo scans a sandboxed RAG application to demonstrate the scanner's capabilities.
 
