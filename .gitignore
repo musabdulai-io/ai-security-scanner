@@ -29,5 +29,9 @@ node_modules/
 .next/
 frontend/.env.local
 
+# Build artifacts
+*.tsbuildinfo
+frontend/public/runtime-env.js
+
 # OS
 .DS_Store
