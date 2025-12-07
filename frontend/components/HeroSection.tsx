@@ -13,7 +13,6 @@ import {
 import SecurityIcon from '@mui/icons-material/Security';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import HistoryIcon from '@mui/icons-material/History';
-import LockIcon from '@mui/icons-material/Lock';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
@@ -26,6 +25,8 @@ interface HeroSectionProps {
   hasPreviousResult?: boolean;
   previousResultAge?: string | null;
   onViewPreviousResult?: () => void;
+  llmJudge: boolean;
+  onLlmJudgeChange: (enabled: boolean) => void;
 }
 
 export function HeroSection({
@@ -37,6 +38,8 @@ export function HeroSection({
   hasPreviousResult = false,
   previousResultAge = null,
   onViewPreviousResult,
+  llmJudge,
+  onLlmJudgeChange,
 }: HeroSectionProps) {
   const isDisabled = isScanning || disabled || cooldownSeconds > 0;
 
@@ -117,25 +120,42 @@ export function HeroSection({
         />
       </Box>
 
-      {/* Twin Toggle (Placeholder - disabled until secure-rag deployed) */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-        <Tooltip title='Secure RAG target coming soon' placement='bottom'>
+      {/* LLM Judge Toggle */}
+      <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Tooltip title='Use AI to improve vulnerability detection accuracy' placement='bottom'>
           <FormControlLabel
-            control={<Switch disabled checked={false} size='small' />}
+            control={
+              <Switch
+                checked={llmJudge}
+                onChange={(e) => onLlmJudgeChange(e.target.checked)}
+                size='small'
+                disabled={isScanning}
+              />
+            }
             label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, opacity: 0.5 }}>
-                <Typography variant='body2' color='text.secondary'>
-                  Standard RAG
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography
+                  variant='body2'
+                  color={llmJudge ? 'text.secondary' : 'text.primary'}
+                >
+                  Standard
                 </Typography>
-                <LockIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                <Typography variant='caption' color='text.disabled'>
-                  Secure RAG
+                <Typography
+                  variant='body2'
+                  color={llmJudge ? 'primary.main' : 'text.secondary'}
+                  sx={{ fontWeight: llmJudge ? 600 : 400 }}
+                >
+                  LLM Judge
                 </Typography>
               </Box>
             }
-            sx={{ opacity: 0.6 }}
           />
         </Tooltip>
+        <Typography variant='caption' color='text.disabled' sx={{ mt: 0.5 }}>
+          {llmJudge
+            ? 'AI-powered detection (slower, more accurate)'
+            : 'Pattern-based detection (faster)'}
+        </Typography>
       </Box>
 
       {/* Action Buttons */}

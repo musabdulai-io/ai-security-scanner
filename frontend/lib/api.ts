@@ -60,10 +60,19 @@ export interface ScanStatusResponse {
 }
 
 // API functions
-export async function startScan(targetUrl: string, fast = false): Promise<ScanStartResponse> {
+export interface ScanOptions {
+  fast?: boolean;
+  llmJudge?: boolean;
+}
+
+export async function startScan(
+  targetUrl: string,
+  options: ScanOptions = {},
+): Promise<ScanStartResponse> {
   const response = await getApiInstance().post<ScanStartResponse>('/scanner/scan/start', {
     target_url: targetUrl,
-    fast,
+    fast: options.fast ?? false,
+    llm_judge: options.llmJudge ?? false,
   });
   return response.data;
 }
