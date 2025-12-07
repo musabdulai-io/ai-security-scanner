@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, memo } from 'react';
-import { Box, LinearProgress, Paper, Typography, Tooltip } from '@mui/material';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import { Box, LinearProgress, Paper, Typography, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -11,6 +11,9 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import ShieldIcon from '@mui/icons-material/Shield';
 import SpeedIcon from '@mui/icons-material/Speed';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import CircularProgress from '@mui/material/CircularProgress';
 import {
   type AttackState,
   type AttackCategory,
@@ -19,6 +22,7 @@ import {
   parseLogMessage,
   getCategoryProgress,
   getOverallProgress,
+  getCurrentAttack,
 } from '@/lib/attacks';
 
 // Colors matching the existing theme
@@ -41,21 +45,76 @@ interface ScanProgressProps {
   isRunning: boolean;
 }
 
-interface CategoryCardProps {
-  category: AttackCategory;
-  attacks: AttackState[];
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-}
+// Terminal view - inline logs display
+function TerminalView({ logs, isRunning }: { logs: string[]; isRunning: boolean }) {
+  const terminalRef = useRef<HTMLDivElement>(null);
 
-interface AttackChipProps {
-  attack: AttackState;
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  const getLineColor = (line: string) => {
+    if (line.includes('[FAIL]') || line.includes('[ERROR]')) return colors.failed;
+    if (line.includes('[PASS]')) return colors.passed;
+    if (line.includes('[WARN]')) return '#ff8c00';
+    if (line.includes('[SKIP]')) return '#ffcc00';
+    return colors.running;
+  };
+
+  return (
+    <Box
+      ref={terminalRef}
+      sx={{
+        p: 2,
+        height: 350,
+        overflowY: 'auto',
+        fontFamily: '"Monaco", "Menlo", "Consolas", monospace',
+        fontSize: '0.875rem',
+        lineHeight: 1.6,
+        backgroundColor: '#0a0a0a',
+        '&::-webkit-scrollbar': { width: 8 },
+        '&::-webkit-scrollbar-track': { backgroundColor: '#1e1e1e' },
+        '&::-webkit-scrollbar-thumb': { backgroundColor: '#444', borderRadius: 4 },
+      }}
+    >
+      {logs.length === 0 ? (
+        <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+          Waiting for scan to start...
+        </Typography>
+      ) : (
+        logs.map((line, index) => (
+          <Box
+            key={index}
+            sx={{ color: getLineColor(line), whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+          >
+            {line}
+          </Box>
+        ))
+      )}
+      {isRunning && (
+        <Box
+          sx={{
+            display: 'inline-block',
+            width: 8,
+            height: 16,
+            backgroundColor: colors.running,
+            animation: 'blink 1s infinite',
+            '@keyframes blink': {
+              '0%, 50%': { opacity: 1 },
+              '51%, 100%': { opacity: 0 },
+            },
+          }}
+        />
+      )}
+    </Box>
+  );
 }
 
 // Status icon component
-function StatusIcon({ status }: { status: AttackStatus }) {
-  const iconSx = { fontSize: 16 };
+function StatusIcon({ status, size = 16 }: { status: AttackStatus; size?: number }) {
+  const iconSx = { fontSize: size };
 
   switch (status) {
     case 'passed':
@@ -85,68 +144,99 @@ function StatusIcon({ status }: { status: AttackStatus }) {
   }
 }
 
-// Individual attack chip
-const AttackChip = memo(function AttackChip({ attack }: AttackChipProps) {
-  const isActive = attack.status === 'running';
+// Failures summary card - shown at top when there are failures
+function FailuresSummary({ failedAttacks }: { failedAttacks: AttackState[] }) {
+  if (failedAttacks.length === 0) return null;
 
   return (
-    <Tooltip
-      title={
-        attack.latencyMs
-          ? `${attack.status.toUpperCase()} (${attack.latencyMs}ms)`
-          : attack.status.toUpperCase()
-      }
-      placement='top'
+    <Paper
+      elevation={0}
+      sx={{
+        backgroundColor: 'rgba(255, 68, 68, 0.1)',
+        border: `2px solid ${colors.failed}`,
+        borderRadius: 2,
+        p: 2,
+        mb: 2,
+      }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          px: 1,
-          py: 0.5,
-          borderRadius: 1,
-          backgroundColor: isActive ? 'rgba(0, 188, 212, 0.1)' : 'transparent',
-          border: isActive ? '1px solid rgba(0, 188, 212, 0.3)' : '1px solid transparent',
-          transition: 'all 0.2s ease',
-          minWidth: 0,
-        }}
-      >
-        <StatusIcon status={attack.status} />
-        <Typography
-          variant='body2'
-          sx={{
-            fontSize: '0.75rem',
-            color: attack.status === 'pending' ? 'text.disabled' : 'text.secondary',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {attack.name}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <ErrorIcon sx={{ color: colors.failed }} />
+        <Typography variant='subtitle1' sx={{ fontWeight: 700, color: colors.failed }}>
+          {failedAttacks.length} VULNERABILIT{failedAttacks.length === 1 ? 'Y' : 'IES'} FOUND
         </Typography>
       </Box>
-    </Tooltip>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        {failedAttacks.map(attack => (
+          <Typography
+            key={attack.name}
+            variant='body2'
+            sx={{
+              color: colors.failed,
+              backgroundColor: 'rgba(255, 68, 68, 0.1)',
+              px: 1,
+              py: 0.25,
+              borderRadius: 1,
+              fontSize: '0.75rem',
+            }}
+          >
+            {attack.name}
+          </Typography>
+        ))}
+      </Box>
+    </Paper>
   );
-});
+}
+
+// Success card - shown when scan completes with no issues
+function SuccessCard({ total }: { total: number }) {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+        border: `2px solid ${colors.passed}`,
+        borderRadius: 2,
+        p: 2,
+        mb: 2,
+        textAlign: 'center',
+      }}
+    >
+      <CheckCircleIcon sx={{ fontSize: 40, color: colors.passed, mb: 0.5 }} />
+      <Typography variant='subtitle1' sx={{ fontWeight: 700, color: colors.passed }}>
+        NO VULNERABILITIES FOUND
+      </Typography>
+      <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+        All {total} security checks passed
+      </Typography>
+    </Paper>
+  );
+}
 
 // Category card component
-const CategoryCard = memo(function CategoryCard({
+function CategoryCard({
   category,
   attacks,
   label,
   icon,
   color,
-}: CategoryCardProps) {
+}: {
+  category: AttackCategory;
+  attacks: AttackState[];
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+}) {
   const progress = getCategoryProgress(attacks, category);
-  const failedCount = attacks.filter(a => a.status === 'failed').length;
+  // FIX: Count failures from category attacks, not all attacks
+  const failedCount = progress.attacks.filter(a => a.status === 'failed').length;
+  const hasFailures = failedCount > 0;
 
   return (
     <Paper
       elevation={0}
       sx={{
         backgroundColor: colors.cardBg,
-        border: `1px solid ${colors.border}`,
+        border: hasFailures ? `2px solid ${colors.failed}` : `1px solid ${colors.border}`,
         borderRadius: 2,
         p: 2,
         mb: 2,
@@ -159,25 +249,27 @@ const CategoryCard = memo(function CategoryCard({
           <Typography variant='subtitle2' sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
             {label}
           </Typography>
-          {failedCount > 0 && (
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {hasFailures && (
             <Typography
               variant='caption'
               sx={{
                 color: colors.failed,
-                backgroundColor: 'rgba(255, 68, 68, 0.1)',
+                backgroundColor: 'rgba(255, 68, 68, 0.2)',
                 px: 1,
                 py: 0.25,
                 borderRadius: 1,
-                fontWeight: 600,
+                fontWeight: 700,
               }}
             >
               {failedCount} issue{failedCount > 1 ? 's' : ''}
             </Typography>
           )}
+          <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+            {progress.completed}/{progress.total}
+          </Typography>
         </Box>
-        <Typography variant='body2' sx={{ color: 'text.secondary' }}>
-          {progress.completed}/{progress.total}
-        </Typography>
       </Box>
 
       {/* Progress bar */}
@@ -185,92 +277,75 @@ const CategoryCard = memo(function CategoryCard({
         variant='determinate'
         value={progress.percentage}
         sx={{
-          height: 6,
-          borderRadius: 3,
+          height: 4,
+          borderRadius: 2,
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
           mb: 1.5,
           '& .MuiLinearProgress-bar': {
-            backgroundColor: color,
-            borderRadius: 3,
+            backgroundColor: hasFailures ? colors.failed : color,
+            borderRadius: 2,
             transition: 'transform 0.3s ease',
           },
         }}
       />
 
-      {/* Attack chips grid */}
+      {/* Attacks list - in execution order */}
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: {
-            xs: 'repeat(2, 1fr)',
-            sm: 'repeat(3, 1fr)',
-            md: 'repeat(4, 1fr)',
-          },
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
           gap: 0.5,
         }}
       >
         {progress.attacks.map(attack => (
-          <AttackChip key={attack.name} attack={attack} />
+          <Box
+            key={attack.name}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              py: 0.25,
+              px: 0.5,
+              borderRadius: 0.5,
+              backgroundColor:
+                attack.status === 'failed'
+                  ? 'rgba(255, 68, 68, 0.1)'
+                  : attack.status === 'running'
+                    ? 'rgba(0, 188, 212, 0.1)'
+                    : 'transparent',
+            }}
+          >
+            <StatusIcon status={attack.status} size={14} />
+            <Typography
+              variant='caption'
+              sx={{
+                color:
+                  attack.status === 'failed'
+                    ? colors.failed
+                    : attack.status === 'pending'
+                      ? 'text.disabled'
+                      : 'text.secondary',
+                fontWeight: attack.status === 'failed' ? 600 : 400,
+              }}
+            >
+              {attack.name}
+            </Typography>
+            {attack.latencyMs && (
+              <Typography variant='caption' sx={{ color: 'text.disabled', ml: 'auto', fontSize: '0.65rem' }}>
+                {attack.latencyMs}ms
+              </Typography>
+            )}
+          </Box>
         ))}
       </Box>
-    </Paper>
-  );
-});
-
-// Overall progress footer
-function OverallProgress({
-  completed,
-  total,
-  percentage,
-}: {
-  completed: number;
-  total: number;
-  percentage: number;
-}) {
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        backgroundColor: colors.cardBg,
-        border: `1px solid ${colors.border}`,
-        borderRadius: 2,
-        p: 2,
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-        <Typography variant='body2' sx={{ color: 'text.secondary' }}>
-          Overall Progress
-        </Typography>
-        <Typography variant='body2' sx={{ color: 'text.secondary' }}>
-          {completed}/{total} attacks complete
-        </Typography>
-      </Box>
-      <LinearProgress
-        variant='determinate'
-        value={percentage}
-        sx={{
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          '& .MuiLinearProgress-bar': {
-            backgroundColor: colors.passed,
-            borderRadius: 4,
-            transition: 'transform 0.3s ease',
-          },
-        }}
-      />
-      <Typography
-        variant='caption'
-        sx={{ display: 'block', textAlign: 'center', mt: 1, color: 'text.secondary' }}
-      >
-        {percentage}%
-      </Typography>
     </Paper>
   );
 }
 
 // Main ScanProgress component
 export function ScanProgress({ logs, isRunning }: ScanProgressProps) {
+  const [showLogs, setShowLogs] = useState(false);
+
   // Parse all logs to build current attack state
   const attackState = useMemo(() => {
     let state = createInitialAttackState();
@@ -281,6 +356,10 @@ export function ScanProgress({ logs, isRunning }: ScanProgressProps) {
   }, [logs]);
 
   const overallProgress = useMemo(() => getOverallProgress(attackState), [attackState]);
+  const currentAttack = useMemo(() => getCurrentAttack(attackState), [attackState]);
+  const failedAttacks = useMemo(() => attackState.filter(a => a.status === 'failed'), [attackState]);
+  const isComplete =
+    !isRunning && overallProgress.completed === overallProgress.total && overallProgress.total > 0;
 
   // Don't render if no logs yet
   if (logs.length === 0 && !isRunning) {
@@ -312,69 +391,98 @@ export function ScanProgress({ logs, isRunning }: ScanProgressProps) {
           borderBottom: `1px solid ${colors.border}`,
         }}
       >
-        <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
-          Security Scan Progress
-        </Typography>
-        {isRunning && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: colors.running,
-                animation: 'pulse 1.5s infinite',
-                '@keyframes pulse': {
-                  '0%, 100%': { opacity: 1 },
-                  '50%': { opacity: 0.5 },
-                },
-              }}
-            />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {isRunning && (
+            <CircularProgress size={18} sx={{ color: colors.running }} />
+          )}
+          <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
+            Security Scan {isComplete ? 'Complete' : 'Progress'}
+          </Typography>
+          {isRunning && currentAttack && (
             <Typography variant='caption' sx={{ color: colors.running }}>
-              Scanning...
+              - {currentAttack}
             </Typography>
-          </Box>
-        )}
+          )}
+        </Box>
+        <Button
+          size='small'
+          variant='outlined'
+          startIcon={showLogs ? <AssessmentIcon /> : <TerminalIcon />}
+          onClick={() => setShowLogs(!showLogs)}
+          sx={{
+            borderColor: colors.border,
+            color: 'text.secondary',
+            textTransform: 'none',
+            '&:hover': { borderColor: 'text.secondary' },
+          }}
+        >
+          {showLogs ? 'Progress' : 'Logs'}
+        </Button>
       </Box>
 
       {/* Content */}
-      <Box sx={{ p: 2 }}>
-        {/* Security Category */}
-        <CategoryCard
-          category='security'
-          attacks={attackState}
-          label='Security'
-          icon={<ShieldIcon />}
-          color={colors.security}
-        />
+      {showLogs ? (
+        <TerminalView logs={logs} isRunning={isRunning} />
+      ) : (
+        <Box sx={{ p: 2 }}>
+          {/* Overall progress bar */}
+          <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+                Overall Progress
+              </Typography>
+              <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+                {overallProgress.completed}/{overallProgress.total} attacks
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant='determinate'
+              value={overallProgress.percentage}
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: failedAttacks.length > 0 ? colors.failed : colors.passed,
+                  borderRadius: 4,
+                  transition: 'transform 0.3s ease',
+                },
+              }}
+            />
+          </Box>
 
-        {/* Reliability Category */}
-        <CategoryCard
-          category='reliability'
-          attacks={attackState}
-          label='Reliability'
-          icon={<SpeedIcon />}
-          color={colors.reliability}
-        />
+          {/* Failures summary at top if there are failures */}
+          {failedAttacks.length > 0 && <FailuresSummary failedAttacks={failedAttacks} />}
 
-        {/* Cost Category */}
-        <CategoryCard
-          category='cost'
-          attacks={attackState}
-          label='Cost & Performance'
-          icon={<AttachMoneyIcon />}
-          color={colors.cost}
-        />
+          {/* Success card if complete with no failures */}
+          {isComplete && failedAttacks.length === 0 && <SuccessCard total={overallProgress.total} />}
 
-        {/* Overall Progress */}
-        <OverallProgress {...overallProgress} />
-      </Box>
+          {/* Category cards */}
+          <CategoryCard
+            category='security'
+            attacks={attackState}
+            label='Security'
+            icon={<ShieldIcon />}
+            color={colors.security}
+          />
+
+          <CategoryCard
+            category='reliability'
+            attacks={attackState}
+            label='Reliability'
+            icon={<SpeedIcon />}
+            color={colors.reliability}
+          />
+
+          <CategoryCard
+            category='cost'
+            attacks={attackState}
+            label='Cost & Performance'
+            icon={<AttachMoneyIcon />}
+            color={colors.cost}
+          />
+        </Box>
+      )}
     </Paper>
   );
 }
