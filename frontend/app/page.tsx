@@ -26,6 +26,7 @@ export default function Home() {
   const [hasPreviousResult, setHasPreviousResult] = useState(false);
   const [previousResultAge, setPreviousResultAge] = useState<string | null>(null);
   const [llmJudge, setLlmJudge] = useState(false);
+  const [ragMode, setRagMode] = useState<'standard' | 'secure'>('standard');
 
   const sandboxUrl = getEnv('NEXT_PUBLIC_SANDBOX_URL');
 
@@ -145,6 +146,8 @@ export default function Home() {
           hasPreviousResult={hasPreviousResult}
           previousResultAge={previousResultAge}
           onViewPreviousResult={handleViewPreviousResult}
+          ragMode={ragMode}
+          onRagModeChange={setRagMode}
           llmJudge={llmJudge}
           onLlmJudgeChange={setLlmJudge}
         />
