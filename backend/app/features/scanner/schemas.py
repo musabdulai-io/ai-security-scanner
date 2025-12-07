@@ -27,6 +27,9 @@ class ScanStartRequest(BaseModel):
     headers: Optional[Dict[str, str]] = Field(
         default=None, description="Custom headers for requests"
     )
+    llm_judge: bool = Field(
+        default=False, description="Use LLM to evaluate responses for improved detection"
+    )
 
     @field_validator("target_url")
     @classmethod

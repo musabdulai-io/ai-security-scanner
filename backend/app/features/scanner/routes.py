@@ -159,7 +159,7 @@ async def start_scan(
 
     async def run_scan() -> None:
         """Execute the scan in background."""
-        scanner = ScannerService()
+        scanner = ScannerService(use_llm_judge=request.llm_judge)
 
         def on_progress(message: str) -> None:
             scan_results[scan_id]["logs"].append(message)
