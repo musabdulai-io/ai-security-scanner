@@ -331,7 +331,10 @@ function CategoryCard({
               {attack.name}
             </Typography>
             {attack.latencyMs && (
-              <Typography variant='caption' sx={{ color: 'text.disabled', ml: 'auto', fontSize: '0.65rem' }}>
+              <Typography
+                variant='caption'
+                sx={{ color: 'text.disabled', ml: 'auto', fontSize: '0.65rem' }}
+              >
                 {attack.latencyMs}ms
               </Typography>
             )}
@@ -357,7 +360,10 @@ export function ScanProgress({ logs, isRunning }: ScanProgressProps) {
 
   const overallProgress = useMemo(() => getOverallProgress(attackState), [attackState]);
   const currentAttack = useMemo(() => getCurrentAttack(attackState), [attackState]);
-  const failedAttacks = useMemo(() => attackState.filter(a => a.status === 'failed'), [attackState]);
+  const failedAttacks = useMemo(
+    () => attackState.filter(a => a.status === 'failed'),
+    [attackState],
+  );
   const isComplete =
     !isRunning && overallProgress.completed === overallProgress.total && overallProgress.total > 0;
 
@@ -392,9 +398,7 @@ export function ScanProgress({ logs, isRunning }: ScanProgressProps) {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {isRunning && (
-            <CircularProgress size={18} sx={{ color: colors.running }} />
-          )}
+          {isRunning && <CircularProgress size={18} sx={{ color: colors.running }} />}
           <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
             Security Scan {isComplete ? 'Complete' : 'Progress'}
           </Typography>
@@ -455,7 +459,9 @@ export function ScanProgress({ logs, isRunning }: ScanProgressProps) {
           {failedAttacks.length > 0 && <FailuresSummary failedAttacks={failedAttacks} />}
 
           {/* Success card if complete with no failures */}
-          {isComplete && failedAttacks.length === 0 && <SuccessCard total={overallProgress.total} />}
+          {isComplete && failedAttacks.length === 0 && (
+            <SuccessCard total={overallProgress.total} />
+          )}
 
           {/* Category cards */}
           <CategoryCard

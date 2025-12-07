@@ -86,6 +86,7 @@ export default function Home() {
           } else if (data.type === 'result') {
             setResult(data.data);
             saveResult(scan_id, data.data); // Persist to localStorage
+            setHasPreviousResult(true); // Enable "View Last Result" button
             setShowResult(true);
             setIsScanning(false);
             eventSource.close();
