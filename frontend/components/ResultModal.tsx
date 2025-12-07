@@ -129,6 +129,14 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
       onClose={onClose}
       maxWidth='sm'
       fullWidth
+      slotProps={{
+        backdrop: {
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(4px)',
+          },
+        },
+      }}
       PaperProps={{
         sx: {
           backgroundColor: 'background.paper',

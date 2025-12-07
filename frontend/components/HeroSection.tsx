@@ -6,9 +6,8 @@ import {
   TextField,
   Typography,
   CircularProgress,
-  FormControlLabel,
-  Switch,
-  Tooltip,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -25,6 +24,8 @@ interface HeroSectionProps {
   hasPreviousResult?: boolean;
   previousResultAge?: string | null;
   onViewPreviousResult?: () => void;
+  ragMode: 'standard' | 'secure';
+  onRagModeChange: (mode: 'standard' | 'secure') => void;
   llmJudge: boolean;
   onLlmJudgeChange: (enabled: boolean) => void;
 }
@@ -38,6 +39,8 @@ export function HeroSection({
   hasPreviousResult = false,
   previousResultAge = null,
   onViewPreviousResult,
+  ragMode,
+  onRagModeChange,
   llmJudge,
   onLlmJudgeChange,
 }: HeroSectionProps) {
@@ -120,42 +123,107 @@ export function HeroSection({
         />
       </Box>
 
-      {/* LLM Judge Toggle */}
-      <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Tooltip title='Use AI to improve vulnerability detection accuracy' placement='bottom'>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={llmJudge}
-                onChange={(e) => onLlmJudgeChange(e.target.checked)}
-                size='small'
-                disabled={isScanning}
-              />
-            }
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Typography
-                  variant='body2'
-                  color={llmJudge ? 'text.secondary' : 'text.primary'}
-                >
-                  Standard
-                </Typography>
-                <Typography
-                  variant='body2'
-                  color={llmJudge ? 'primary.main' : 'text.secondary'}
-                  sx={{ fontWeight: llmJudge ? 600 : 400 }}
-                >
-                  LLM Judge
+      {/* Scan Options */}
+      <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        {/* RAG Mode Toggle */}
+        <Box sx={{ width: '100%', maxWidth: 400 }}>
+          <Typography variant='caption' color='text.secondary' sx={{ mb: 1, display: 'block', textAlign: 'center' }}>
+            Target
+          </Typography>
+          <ToggleButtonGroup
+            value={ragMode}
+            exclusive
+            onChange={(_, value) => value && onRagModeChange(value)}
+            size='small'
+            disabled={isScanning}
+            sx={{ width: '100%', display: 'flex' }}
+          >
+            <ToggleButton
+              value='standard'
+              sx={{
+                flex: 1,
+                py: 1,
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(0, 255, 136, 0.15)',
+                  borderColor: 'primary.main',
+                  '&:hover': { backgroundColor: 'rgba(0, 255, 136, 0.25)' },
+                },
+              }}
+            >
+              <Typography variant='body2'>Standard RAG</Typography>
+            </ToggleButton>
+            <ToggleButton
+              value='secure'
+              disabled
+              sx={{
+                flex: 1,
+                py: 1,
+                '&.Mui-disabled': { opacity: 0.5 },
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant='body2'>Secure RAG</Typography>
+                <Typography variant='caption' color='text.disabled' sx={{ display: 'block', fontSize: '0.65rem' }}>
+                  Coming soon
                 </Typography>
               </Box>
-            }
-          />
-        </Tooltip>
-        <Typography variant='caption' color='text.disabled' sx={{ mt: 0.5 }}>
-          {llmJudge
-            ? 'AI-powered detection (slower, more accurate)'
-            : 'Pattern-based detection (faster)'}
-        </Typography>
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {/* Detection Mode Toggle */}
+        <Box sx={{ width: '100%', maxWidth: 400 }}>
+          <Typography variant='caption' color='text.secondary' sx={{ mb: 1, display: 'block', textAlign: 'center' }}>
+            Detection Mode
+          </Typography>
+          <ToggleButtonGroup
+            value={llmJudge ? 'llm' : 'pattern'}
+            exclusive
+            onChange={(_, value) => value && onLlmJudgeChange(value === 'llm')}
+            size='small'
+            disabled={isScanning}
+            sx={{ width: '100%', display: 'flex' }}
+          >
+            <ToggleButton
+              value='pattern'
+              sx={{
+                flex: 1,
+                py: 1,
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(0, 255, 136, 0.15)',
+                  borderColor: 'primary.main',
+                  '&:hover': { backgroundColor: 'rgba(0, 255, 136, 0.25)' },
+                },
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant='body2'>Pattern-based</Typography>
+                <Typography variant='caption' color='text.secondary' sx={{ display: 'block', fontSize: '0.65rem' }}>
+                  Faster
+                </Typography>
+              </Box>
+            </ToggleButton>
+            <ToggleButton
+              value='llm'
+              sx={{
+                flex: 1,
+                py: 1,
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(0, 255, 136, 0.15)',
+                  borderColor: 'primary.main',
+                  '&:hover': { backgroundColor: 'rgba(0, 255, 136, 0.25)' },
+                },
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant='body2'>LLM Judge</Typography>
+                <Typography variant='caption' color='text.secondary' sx={{ display: 'block', fontSize: '0.65rem' }}>
+                  More accurate
+                </Typography>
+              </Box>
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
       </Box>
 
       {/* Action Buttons */}
