@@ -127,7 +127,11 @@ export function HeroSection({
       <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
         {/* RAG Mode Toggle */}
         <Box sx={{ width: '100%', maxWidth: 400 }}>
-          <Typography variant='caption' color='text.secondary' sx={{ mb: 1, display: 'block', textAlign: 'center' }}>
+          <Typography
+            variant='caption'
+            color='text.secondary'
+            sx={{ mb: 1, display: 'block', textAlign: 'center' }}
+          >
             Target
           </Typography>
           <ToggleButtonGroup
@@ -163,7 +167,11 @@ export function HeroSection({
             >
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant='body2'>Secure RAG</Typography>
-                <Typography variant='caption' color='text.disabled' sx={{ display: 'block', fontSize: '0.65rem' }}>
+                <Typography
+                  variant='caption'
+                  color='text.disabled'
+                  sx={{ display: 'block', fontSize: '0.65rem' }}
+                >
                   Coming soon
                 </Typography>
               </Box>
@@ -173,7 +181,11 @@ export function HeroSection({
 
         {/* Detection Mode Toggle */}
         <Box sx={{ width: '100%', maxWidth: 400 }}>
-          <Typography variant='caption' color='text.secondary' sx={{ mb: 1, display: 'block', textAlign: 'center' }}>
+          <Typography
+            variant='caption'
+            color='text.secondary'
+            sx={{ mb: 1, display: 'block', textAlign: 'center' }}
+          >
             Detection Mode
           </Typography>
           <ToggleButtonGroup
@@ -198,7 +210,11 @@ export function HeroSection({
             >
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant='body2'>Pattern-based</Typography>
-                <Typography variant='caption' color='text.secondary' sx={{ display: 'block', fontSize: '0.65rem' }}>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{ display: 'block', fontSize: '0.65rem' }}
+                >
                   Faster
                 </Typography>
               </Box>
@@ -217,7 +233,11 @@ export function HeroSection({
             >
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant='body2'>LLM Judge</Typography>
-                <Typography variant='caption' color='text.secondary' sx={{ display: 'block', fontSize: '0.65rem' }}>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{ display: 'block', fontSize: '0.65rem' }}
+                >
                   More accurate
                 </Typography>
               </Box>

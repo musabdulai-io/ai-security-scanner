@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  IconButton,
   LinearProgress,
   Table,
   TableBody,
@@ -31,6 +32,7 @@ import ShieldIcon from '@mui/icons-material/Shield';
 import SpeedIcon from '@mui/icons-material/Speed';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CloseIcon from '@mui/icons-material/Close';
 import type { ScanResult, SeverityLevel, AttackCategory, Vulnerability } from '@/lib/api';
 
 interface ResultModalProps {
@@ -84,7 +86,7 @@ const sortAttacks = <T extends { status: string }>(attacks: T[]): T[] => {
 export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalProps) {
   // Expand first vulnerability by default if there are any
   const [expandedVuln, setExpandedVuln] = useState<string | false>(
-    result?.vulnerabilities?.[0] ? `${result.vulnerabilities[0].name}-0` : false
+    result?.vulnerabilities?.[0] ? `${result.vulnerabilities[0].name}-0` : false,
   );
 
   if (!result) return null;
@@ -145,7 +147,22 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
         },
       }}
     >
-      <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+      <DialogTitle sx={{ textAlign: 'center', pb: 1, position: 'relative' }}>
+        {/* Close X button */}
+        <IconButton
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'text.secondary',
+            '&:hover': { color: 'text.primary' },
+          }}
+          aria-label='close'
+        >
+          <CloseIcon />
+        </IconButton>
+
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
           {hasVulnerabilities ? (
             <ErrorIcon sx={{ fontSize: 48, color: 'error.main' }} />
@@ -185,7 +202,10 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
               <Typography variant='body2' color='text.secondary'>
                 vulnerabilit{vulnCount === 1 ? 'y' : 'ies'} found
               </Typography>
-              <Typography variant='caption' sx={{ color: riskLevel.color, fontWeight: 600, mt: 0.5, display: 'block' }}>
+              <Typography
+                variant='caption'
+                sx={{ color: riskLevel.color, fontWeight: 600, mt: 0.5, display: 'block' }}
+              >
                 {riskLevel.label}
               </Typography>
             </Box>
@@ -291,7 +311,11 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails sx={{ pt: 0 }}>
-                  <Typography variant='body2' color='text.secondary' sx={{ fontSize: '0.8rem', mb: 2 }}>
+                  <Typography
+                    variant='body2'
+                    color='text.secondary'
+                    sx={{ fontSize: '0.8rem', mb: 2 }}
+                  >
                     {vuln.description}
                   </Typography>
 
@@ -406,7 +430,10 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
                                 size='small'
                                 sx={{
                                   backgroundColor: `${statusColors[attack.status]}20`,
-                                  color: attack.status === 'PASS' ? '#6b7280' : statusColors[attack.status],
+                                  color:
+                                    attack.status === 'PASS'
+                                      ? '#6b7280'
+                                      : statusColors[attack.status],
                                   fontWeight: attack.status === 'FAIL' ? 700 : 400,
                                   fontSize: '0.65rem',
                                   height: 18,
@@ -517,20 +544,24 @@ function generateReportHTML(result: ScanResult): string {
     cost: { label: 'Cost', color: '#4488ff' },
   };
 
-  // Calculate security score
-  const weights: Record<string, number> = { CRITICAL: 25, HIGH: 15, MEDIUM: 8, LOW: 3 };
-  const securityScore = Math.max(
-    0,
-    100 - result.vulnerabilities.reduce((sum, v) => sum + (weights[v.severity] || 0), 0),
+  // Count severities for risk level
+  const severityCounts = result.vulnerabilities.reduce(
+    (acc, v) => {
+      acc[v.severity] = (acc[v.severity] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
   );
-  const scoreColor =
-    securityScore >= 90
-      ? '#00ff88'
-      : securityScore >= 70
-        ? '#ffcc00'
-        : securityScore >= 50
-          ? '#ff8c00'
-          : '#ff4444';
+
+  // Determine risk level
+  const getRiskLevel = () => {
+    if (severityCounts.CRITICAL > 0) return { label: 'CRITICAL RISK', color: '#ff4444' };
+    if (severityCounts.HIGH > 0) return { label: 'HIGH RISK', color: '#ff8c00' };
+    if (severityCounts.MEDIUM > 0) return { label: 'MODERATE RISK', color: '#ffcc00' };
+    if (severityCounts.LOW > 0) return { label: 'LOW RISK', color: '#4488ff' };
+    return { label: 'SECURE', color: '#00ff88' };
+  };
+  const riskLevel = getRiskLevel();
 
   const vulnerabilitiesHTML = result.vulnerabilities
     .map(
@@ -613,9 +644,6 @@ function generateReportHTML(result: ScanResult): string {
     .status { text-align: center; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
     .status.failed { background: rgba(255, 68, 68, 0.1); border: 1px solid #ff4444; }
     .status.passed { background: rgba(0, 255, 136, 0.1); border: 1px solid #00ff88; }
-    .score-card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid ${scoreColor}30; }
-    .score-bar { height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
-    .score-fill { height: 100%; background: ${scoreColor}; width: ${securityScore}%; }
     .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
     .meta-item { background: #141414; padding: 16px; border-radius: 8px; }
     .meta-label { color: #a0a0a0; font-size: 12px; margin-bottom: 4px; }
@@ -625,20 +653,15 @@ function generateReportHTML(result: ScanResult): string {
   <div class="container">
     <h1>AI Security Scan Report</h1>
 
-    <div class="score-card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <span style="color: #a0a0a0;">Security Score</span>
-        <span style="font-size: 28px; font-weight: bold; color: ${scoreColor};">${securityScore}/100</span>
-      </div>
-      <div class="score-bar"><div class="score-fill"></div></div>
-    </div>
-
     <div class="status ${result.vulnerabilities.length > 0 ? 'failed' : 'passed'}">
       <h2 style="color: ${result.vulnerabilities.length > 0 ? '#ff4444' : '#00ff88'}; margin: 0;">
         ${result.vulnerabilities.length > 0 ? 'VULNERABILITIES DETECTED' : 'SCAN PASSED'}
       </h2>
-      <div style="font-size: 48px; font-weight: bold; color: ${result.vulnerabilities.length > 0 ? '#ff4444' : '#00ff88'};">
+      <div style="font-size: 48px; font-weight: bold; color: ${riskLevel.color};">
         ${result.vulnerabilities.length}
+      </div>
+      <div style="font-size: 14px; font-weight: 600; color: ${riskLevel.color}; margin-top: 8px;">
+        ${riskLevel.label}
       </div>
     </div>
 
