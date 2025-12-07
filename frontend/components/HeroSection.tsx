@@ -14,6 +14,8 @@ import SecurityIcon from '@mui/icons-material/Security';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import HistoryIcon from '@mui/icons-material/History';
 import LockIcon from '@mui/icons-material/Lock';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 interface HeroSectionProps {
   sandboxUrl: string;
@@ -175,6 +177,62 @@ export function HeroSection({
             View Last Result {previousResultAge && `(${previousResultAge})`}
           </Button>
         )}
+      </Box>
+
+      {/* Self-host & CTA Footer */}
+      <Box
+        sx={{
+          mt: 4,
+          pt: 3,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 1.5,
+        }}
+      >
+        <Typography variant='body2' color='text.secondary'>
+          Want to scan your own AI apps?
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Button
+            size='small'
+            variant='outlined'
+            startIcon={<GitHubIcon />}
+            href='https://github.com/musabdulai-io/ai-security-scanner'
+            target='_blank'
+            rel='noopener noreferrer'
+            sx={{
+              borderColor: 'text.secondary',
+              color: 'text.secondary',
+              '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+              },
+            }}
+          >
+            View on GitHub
+          </Button>
+          <Button
+            size='small'
+            variant='outlined'
+            startIcon={<CalendarTodayIcon />}
+            href='https://calendly.com/musabdulai/ai-security-check'
+            target='_blank'
+            rel='noopener noreferrer'
+            sx={{
+              borderColor: 'success.main',
+              color: 'success.main',
+              '&:hover': {
+                borderColor: 'success.light',
+                backgroundColor: 'rgba(0, 255, 136, 0.1)',
+              },
+            }}
+          >
+            Book a Call
+          </Button>
+        </Box>
       </Box>
     </Box>
   );
