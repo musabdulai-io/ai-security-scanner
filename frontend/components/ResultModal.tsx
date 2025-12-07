@@ -283,9 +283,48 @@ export function ResultModal({ open, onClose, result, onShowCLI }: ResultModalPro
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails sx={{ pt: 0 }}>
-                  <Typography variant='body2' color='text.secondary' sx={{ fontSize: '0.8rem' }}>
+                  <Typography variant='body2' color='text.secondary' sx={{ fontSize: '0.8rem', mb: 2 }}>
                     {vuln.description}
                   </Typography>
+
+                  {/* Evidence */}
+                  <Box sx={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 1, p: 1.5, mb: 1 }}>
+                    <Typography variant='caption' sx={{ color: '#00ff88', fontWeight: 600 }}>
+                      Attack Prompt
+                    </Typography>
+                    <Typography
+                      variant='body2'
+                      sx={{
+                        fontFamily: 'monospace',
+                        fontSize: '0.75rem',
+                        whiteSpace: 'pre-wrap',
+                        mt: 0.5,
+                        color: 'text.secondary',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {vuln.evidence_request}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 1, p: 1.5 }}>
+                    <Typography variant='caption' sx={{ color: '#ff4444', fontWeight: 600 }}>
+                      Vulnerable Response
+                    </Typography>
+                    <Typography
+                      variant='body2'
+                      sx={{
+                        fontFamily: 'monospace',
+                        fontSize: '0.75rem',
+                        whiteSpace: 'pre-wrap',
+                        mt: 0.5,
+                        color: 'text.secondary',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {vuln.evidence_response}
+                    </Typography>
+                  </Box>
                 </AccordionDetails>
               </Accordion>
             ))}

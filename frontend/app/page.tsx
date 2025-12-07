@@ -25,6 +25,7 @@ export default function Home() {
   const [cooldown, setCooldown] = useState(0);
   const [hasPreviousResult, setHasPreviousResult] = useState(false);
   const [previousResultAge, setPreviousResultAge] = useState<string | null>(null);
+  const [llmJudge, setLlmJudge] = useState(false);
 
   const sandboxUrl = getEnv('NEXT_PUBLIC_SANDBOX_URL');
 
@@ -72,7 +73,7 @@ export default function Home() {
     recordScanAttempt();
 
     try {
-      const { scan_id } = await startScan(sandboxUrl);
+      const { scan_id } = await startScan(sandboxUrl, { llmJudge });
       const eventSource = createScanEventSource(scan_id);
 
       eventSource.onmessage = event => {
@@ -120,7 +121,7 @@ export default function Home() {
 
       setIsScanning(false);
     }
-  }, [sandboxUrl]);
+  }, [sandboxUrl, llmJudge]);
 
   const handleViewPreviousResult = useCallback(() => {
     if (result) {
@@ -144,6 +145,8 @@ export default function Home() {
           hasPreviousResult={hasPreviousResult}
           previousResultAge={previousResultAge}
           onViewPreviousResult={handleViewPreviousResult}
+          llmJudge={llmJudge}
+          onLlmJudgeChange={setLlmJudge}
         />
 
         {error && (
