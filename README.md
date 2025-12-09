@@ -20,10 +20,22 @@ A security auditing tool for LLM and RAG applications. Test for prompt injection
 
 ### Option 1: pipx (Recommended)
 
+> **Prerequisites:** Install pipx first:
+> ```bash
+> # Standard Python
+> python3 -m pip install --user pipx
+> python3 -m pipx ensurepath
+>
+> # Or with uv
+> uv tool install pipx
+> uv tool update-shell
+> ```
+> Then restart your terminal.
+
 Run directly without installation:
 
 ```bash
-pipx run git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
+pipx run --spec git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
 ```
 
 Or install globally:
@@ -35,11 +47,33 @@ scanner scan https://your-app.com --output report.html
 
 ### Option 2: Docker
 
+> **Prerequisites:** Install Docker from [docker.com/get-docker](https://docs.docker.com/get-docker/)
+
 ```bash
 docker run --rm -it ghcr.io/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
 ```
 
-### Option 3: Poetry (From Source)
+### Option 3: uv (Fastest)
+
+> **Prerequisites:** Install uv:
+> ```bash
+> curl -LsSf https://astral.sh/uv/install.sh | sh
+> ```
+> Or: `pip install uv`
+
+```bash
+git clone https://github.com/musabdulai-io/ai-security-scanner.git
+cd ai-security-scanner
+uv sync
+uv run scanner scan https://your-app.com
+```
+
+### Option 4: Poetry
+
+> **Prerequisites:** Install Poetry:
+> ```bash
+> curl -sSL https://install.python-poetry.org | python3 -
+> ```
 
 ```bash
 git clone https://github.com/musabdulai-io/ai-security-scanner.git
@@ -48,12 +82,12 @@ poetry install
 poetry run scanner scan https://your-app.com
 ```
 
-### Option 4: pip / venv (Development)
+### Option 5: pip / venv
 
 ```bash
 git clone https://github.com/musabdulai-io/ai-security-scanner.git
 cd ai-security-scanner
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -e .
 python -m backend.app.cli scan https://your-app.com
