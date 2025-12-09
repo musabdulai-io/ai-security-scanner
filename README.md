@@ -53,13 +53,21 @@ scanner scan https://your-app.com --output report.html
 docker run --rm -it ghcr.io/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
 ```
 
-### Option 3: uv (Fastest)
+### Option 3: uv / uvx (Fastest)
 
 > **Prerequisites:** Install uv:
 > ```bash
 > curl -LsSf https://astral.sh/uv/install.sh | sh
 > ```
 > Or: `pip install uv`
+
+Run directly without installation (like pipx):
+
+```bash
+uvx --from git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
+```
+
+Or clone and run from source:
 
 ```bash
 git clone https://github.com/musabdulai-io/ai-security-scanner.git

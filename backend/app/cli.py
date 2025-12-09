@@ -98,12 +98,6 @@ def scan(
         "--no-open",
         help="Don't automatically open the report in browser",
     ),
-    sandbox: bool = typer.Option(
-        False,
-        "--sandbox",
-        hidden=True,
-        help="Internal sandbox mode (restricts to sandbox URL)",
-    ),
 ) -> None:
     """
     Scan an LLM/RAG application for security vulnerabilities.
@@ -168,11 +162,6 @@ def scan(
         if llm_judge:
             console.print("[cyan]LLM Judge: Enabled (uses API credits)[/cyan]")
         console.print()
-
-        # Sandbox mode check (for internal use)
-        if sandbox and settings.SANDBOX_URL not in target:
-            show_error(f"Sandbox mode only allows: {settings.SANDBOX_URL}")
-            raise typer.Exit(1)
 
         # Run the scan
         result = asyncio.run(_run_scan(
