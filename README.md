@@ -178,6 +178,7 @@ scanner info                       Show configuration
 | `--verbose, -v` | Include raw AI responses in report |
 | `--pdf` | Generate PDF report (in addition to HTML) |
 | `--no-open` | Don't open report in browser |
+| `--test-data-dir, -d` | Directory containing custom test documents for RAG attacks |
 
 ### PDF Generation
 

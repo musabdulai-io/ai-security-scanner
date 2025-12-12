@@ -2,6 +2,7 @@
 """Application configuration using Pydantic Settings."""
 
 from functools import lru_cache
+from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -38,6 +39,12 @@ class Settings(BaseSettings):
     SANDBOX_URL: str = "https://rag-api.musabdulai.com"
     RATE_LIMIT_REQUESTS: int = 1
     RATE_LIMIT_WINDOW: int = 300  # 5 minutes per IP
+
+    # Test Data (for advanced RAG testing with custom documents)
+    TEST_DATA_DIR: Optional[str] = Field(
+        default=None,
+        description="Directory containing custom test documents for RAG attacks",
+    )
 
     # Lead Generation
     CTA_URL: str = "https://calendly.com/musabdulai/ai-security-check"

@@ -99,6 +99,12 @@ def scan(
         "--no-open",
         help="Don't automatically open the report in browser",
     ),
+    test_data_dir: Optional[str] = typer.Option(
+        None,
+        "--test-data-dir",
+        "-d",
+        help="Directory containing custom test documents for RAG attacks",
+    ),
 ) -> None:
     """
     Scan an LLM/RAG application for security vulnerabilities.
@@ -137,6 +143,18 @@ def scan(
             show_error("Target URL is required. Provide it as argument or via --curl")
             raise typer.Exit(1)
 
+        # Validate and set test data directory
+        if test_data_dir:
+            test_path = Path(test_data_dir)
+            if not test_path.exists():
+                show_error(f"Test data directory does not exist: {test_data_dir}")
+                raise typer.Exit(1)
+            if not test_path.is_dir():
+                show_error(f"Test data path is not a directory: {test_data_dir}")
+                raise typer.Exit(1)
+            # Update settings with the provided path
+            settings.TEST_DATA_DIR = str(test_path.resolve())
+
         # Parse headers
         headers = {}
         if header:
@@ -158,6 +176,8 @@ def scan(
         console.print(f"Output: [dim]{output}[/dim]")
         if fast:
             console.print("[yellow]Fast mode: Skipping RAG upload tests[/yellow]")
+        if test_data_dir:
+            console.print(f"[cyan]Test data: {settings.TEST_DATA_DIR}[/cyan]")
         if competitors:
             console.print(f"[dim]Competitors: {', '.join(competitors)}[/dim]")
         if llm_judge:
