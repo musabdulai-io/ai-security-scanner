@@ -37,7 +37,10 @@ Run directly without installation:
 ```bash
 pipx run --spec git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
 
-# With LLM Judge
+# With LLM Judge (using --api-key flag)
+pipx run --spec git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com --llm-judge --api-key sk-...
+
+# Or with environment variable
 OPENAI_API_KEY=sk-... pipx run --spec git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com --llm-judge
 ```
 
@@ -76,7 +79,10 @@ Run directly without installation (like pipx):
 ```bash
 uvx --from git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
 
-# With LLM Judge
+# With LLM Judge (using --api-key flag)
+uvx --from git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com --llm-judge --api-key sk-...
+
+# Or with environment variable
 OPENAI_API_KEY=sk-... uvx --from git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com --llm-judge
 ```
 
@@ -126,6 +132,9 @@ scanner scan https://your-app.com --fast
 # With LLM Judge for better detection (requires API key)
 export OPENAI_API_KEY=sk-...  # or ANTHROPIC_API_KEY
 scanner scan https://your-app.com --llm-judge
+
+# Or pass API key directly via flag
+scanner scan https://your-app.com --llm-judge --api-key sk-...
 
 # Generate both HTML and PDF reports
 scanner scan https://your-app.com --pdf
@@ -179,6 +188,7 @@ scanner info                       Show configuration
 | `--pdf` | Generate PDF report (in addition to HTML) |
 | `--no-open` | Don't open report in browser |
 | `--test-data-dir, -d` | Directory containing custom test documents for RAG attacks |
+| `--api-key, -k` | API key for LLM Judge (alternative to env vars) |
 
 ### PDF Generation
 
