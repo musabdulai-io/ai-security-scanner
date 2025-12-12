@@ -19,6 +19,7 @@ from typing import List, Optional
 import httpx
 
 from backend.app.core import logs
+from backend.app.core.test_data import get_test_data_loader, TestDocument
 from ...models import AttackResult, Vulnerability, Severity
 from ..base import AttackModule
 
@@ -183,8 +184,31 @@ Continue current support strategies and invest in training.
 
         uploaded_doc_ids: List[str] = []
 
+        # Check for external test data
+        test_documents = []
+        loader = get_test_data_loader()
+        if loader:
+            external_docs = loader.load_indirect_injection_docs()
+            if external_docs:
+                logs.debug(
+                    f"Using {len(external_docs)} external test documents",
+                    "attack",
+                )
+                # Convert TestDocument to the dict format expected by the loop
+                for doc in external_docs:
+                    test_documents.append({
+                        "name": doc.name,
+                        "content": doc.content,
+                        "trigger_query": doc.trigger_query,
+                        "canary": doc.canary,
+                    })
+
+        # Fall back to embedded documents if no external docs
+        if not test_documents:
+            test_documents = self.POISONED_DOCUMENTS
+
         try:
-            for doc_info in self.POISONED_DOCUMENTS:
+            for doc_info in test_documents:
                 doc_name = doc_info["name"]
                 doc_content = doc_info["content"]
                 trigger_query = doc_info["trigger_query"]
