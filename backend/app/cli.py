@@ -105,6 +105,12 @@ def scan(
         "-d",
         help="Directory containing custom test documents for RAG attacks",
     ),
+    api_key: Optional[str] = typer.Option(
+        None,
+        "--api-key",
+        "-k",
+        help="API key for LLM Judge (OpenAI or Anthropic). Alternative to env vars.",
+    ),
 ) -> None:
     """
     Scan an LLM/RAG application for security vulnerabilities.
@@ -181,15 +187,28 @@ def scan(
         if competitors:
             console.print(f"[dim]Competitors: {', '.join(competitors)}[/dim]")
         if llm_judge:
-            # Check for API key before proceeding
+            # Check for API key: CLI flag first, then environment variables
             has_openai = os.environ.get("OPENAI_API_KEY")
             has_anthropic = os.environ.get("ANTHROPIC_API_KEY")
+
+            # If api_key provided via CLI, set the appropriate env var
+            if api_key and not has_openai and not has_anthropic:
+                # Auto-detect provider from key format
+                if api_key.startswith("sk-ant-"):
+                    os.environ["ANTHROPIC_API_KEY"] = api_key
+                    has_anthropic = api_key
+                else:
+                    os.environ["OPENAI_API_KEY"] = api_key
+                    has_openai = api_key
+
             if not has_openai and not has_anthropic:
                 show_error(
                     "--llm-judge requires an API key. Set OPENAI_API_KEY or ANTHROPIC_API_KEY:\n\n"
                     "  export OPENAI_API_KEY=sk-...\n"
                     "  # or\n"
                     "  export ANTHROPIC_API_KEY=sk-ant-...\n\n"
+                    "Or pass via --api-key flag:\n\n"
+                    "  scanner scan URL --llm-judge --api-key sk-...\n\n"
                     "Or run without --llm-judge to use pattern-based detection."
                 )
                 raise typer.Exit(1)
