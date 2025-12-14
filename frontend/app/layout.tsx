@@ -3,8 +3,15 @@ import Script from 'next/script';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'AI Security Scanner',
+  title: 'AI Security Scanner | Musah Abdulai',
   description: 'Audit LLM and RAG applications for security vulnerabilities',
+  authors: [{ name: 'Musah Abdulai', url: 'https://musabdulai.com' }],
+  openGraph: {
+    title: 'AI Security Scanner | Musah Abdulai',
+    description: 'Audit LLM and RAG applications for security vulnerabilities',
+    url: 'https://audit.musabdulai.com',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
