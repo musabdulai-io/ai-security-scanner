@@ -7,18 +7,7 @@ from .base import AttackModule
 from .security import (
     PromptInjector,
     PIILeaker,
-    RAGPoisoner,
     PromptExtraction,
-    OutputWeaponization,
-    ExcessiveAgency,
-    ToolAbuseAttack,
-    EncodingAttack,
-    StructureAttack,
-    IndirectInjection,
-    MultiTurnAttack,
-    LanguageAttack,
-    ManyShotJailbreak,
-    ContentContinuationAttack,
     RefusalBypassTest,
     SECURITY_ATTACKS,
 )
@@ -26,19 +15,13 @@ from .security import (
 # Reliability attacks (business logic and quality testing)
 from .reliability import (
     HallucinationDetection,
-    TableParsingTest,
-    RetrievalPrecisionTest,
-    CompetitorTrap,
-    PricingTrap,
     OffTopicHandler,
-    BrandSafetyTest,
     RELIABILITY_ATTACKS,
 )
 
 # Cost attacks (resource and efficiency testing)
 from .cost import (
     EfficiencyAnalysis,
-    ResourceExhaustionAttack,
     COST_ATTACKS,
 )
 
@@ -47,30 +30,13 @@ __all__ = [
     # Security attacks
     "PromptInjector",
     "PIILeaker",
-    "RAGPoisoner",
     "PromptExtraction",
-    "OutputWeaponization",
-    "ExcessiveAgency",
-    "ToolAbuseAttack",
-    "EncodingAttack",
-    "StructureAttack",
-    "IndirectInjection",
-    "MultiTurnAttack",
-    "LanguageAttack",
-    "ManyShotJailbreak",
-    "ContentContinuationAttack",
     "RefusalBypassTest",
     # Reliability attacks
     "HallucinationDetection",
-    "TableParsingTest",
-    "RetrievalPrecisionTest",
-    "CompetitorTrap",
-    "PricingTrap",
     "OffTopicHandler",
-    "BrandSafetyTest",
     # Cost attacks
     "EfficiencyAnalysis",
-    "ResourceExhaustionAttack",
     # Category lists
     "SECURITY_ATTACKS",
     "RELIABILITY_ATTACKS",

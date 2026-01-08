@@ -2,7 +2,6 @@
 """Typer CLI application for AI Security Scanner."""
 
 import asyncio
-import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -73,26 +72,11 @@ def scan(
         "-c",
         help="Number of concurrent requests",
     ),
-    llm_judge: bool = typer.Option(
-        False,
-        "--llm-judge",
-        help="Use LLM-as-Judge for more accurate vulnerability detection (requires API key)",
-    ),
-    judge_provider: Optional[str] = typer.Option(
-        None,
-        "--judge-provider",
-        help="LLM provider for judge: 'openai' or 'anthropic' (auto-detects if not set)",
-    ),
     verbose: bool = typer.Option(
         False,
         "--verbose",
         "-v",
         help="Include raw AI responses in the report for analysis",
-    ),
-    pdf: bool = typer.Option(
-        False,
-        "--pdf",
-        help="Generate PDF report in addition to HTML",
     ),
     no_open: bool = typer.Option(
         False,
@@ -104,12 +88,6 @@ def scan(
         "--test-data-dir",
         "-d",
         help="Directory containing custom test documents for RAG attacks",
-    ),
-    api_key: Optional[str] = typer.Option(
-        None,
-        "--api-key",
-        "-k",
-        help="API key for LLM Judge (OpenAI or Anthropic). Alternative to env vars.",
     ),
 ) -> None:
     """
@@ -186,40 +164,10 @@ def scan(
             console.print(f"[cyan]Test data: {settings.TEST_DATA_DIR}[/cyan]")
         if competitors:
             console.print(f"[dim]Competitors: {', '.join(competitors)}[/dim]")
-        if llm_judge:
-            # Check for API key: CLI flag first, then environment variables
-            has_openai = os.environ.get("OPENAI_API_KEY")
-            has_anthropic = os.environ.get("ANTHROPIC_API_KEY")
-
-            # If api_key provided via CLI, set the appropriate env var
-            if api_key and not has_openai and not has_anthropic:
-                # Auto-detect provider from key format
-                if api_key.startswith("sk-ant-"):
-                    os.environ["ANTHROPIC_API_KEY"] = api_key
-                    has_anthropic = api_key
-                else:
-                    os.environ["OPENAI_API_KEY"] = api_key
-                    has_openai = api_key
-
-            if not has_openai and not has_anthropic:
-                show_error(
-                    "--llm-judge requires an API key. Set OPENAI_API_KEY or ANTHROPIC_API_KEY:\n\n"
-                    "  export OPENAI_API_KEY=sk-...\n"
-                    "  # or\n"
-                    "  export ANTHROPIC_API_KEY=sk-ant-...\n\n"
-                    "Or pass via --api-key flag:\n\n"
-                    "  scanner scan URL --llm-judge --api-key sk-...\n\n"
-                    "Or run without --llm-judge to use pattern-based detection."
-                )
-                raise typer.Exit(1)
-            provider_name = "OpenAI" if has_openai else "Anthropic"
-            console.print(f"[cyan]LLM Judge: Enabled via {provider_name} (uses API credits)[/cyan]")
         console.print()
 
         # Run the scan
-        result = asyncio.run(_run_scan(
-            target, fast, headers, competitors, llm_judge, judge_provider
-        ))
+        result = asyncio.run(_run_scan(target, fast, headers, competitors))
 
         # Display results - failures first, then category tables
         show_failures_summary(result)
@@ -230,13 +178,6 @@ def scan(
         report_path = generate_html_report(result, output, verbose=verbose)
         console.print()
         console.print(f"[dim]Report saved to: {report_path}[/dim]")
-
-        # Generate PDF if requested
-        if pdf:
-            from backend.app.features.scanner.reporting.pdf import generate_pdf_report
-            pdf_output = output.replace(".html", ".pdf") if output.endswith(".html") else f"{output}.pdf"
-            pdf_path = generate_pdf_report(result, pdf_output, verbose=verbose)
-            console.print(f"[dim]PDF saved to: {pdf_path}[/dim]")
 
         # Open report in browser
         if not no_open:
@@ -258,15 +199,9 @@ async def _run_scan(
     fast: bool,
     headers: dict,
     competitors: Optional[List[str]] = None,
-    use_llm_judge: bool = False,
-    judge_provider: Optional[str] = None,
 ):
     """Run the scan asynchronously with progress display."""
-    scanner = ScannerService(
-        competitors=competitors,
-        use_llm_judge=use_llm_judge,
-        judge_provider=judge_provider,
-    )
+    scanner = ScannerService(competitors=competitors)
 
     with Progress(
         SpinnerColumn(),
@@ -290,6 +225,125 @@ async def _run_scan(
         )
 
     return result
+
+
+@app.command()
+def packs(
+    tier: Optional[str] = typer.Option(
+        None,
+        "--tier",
+        "-t",
+        help="Filter by tier: community, pro",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed pack information",
+    ),
+) -> None:
+    """List all available attack packs."""
+    from rich.table import Table
+    from backend.app.features.scanner.packs import get_registry, PackTier
+
+    registry = get_registry()
+
+    # Filter by tier if specified
+    packs_list = list(registry.packs.values())
+    if tier:
+        try:
+            tier_enum = PackTier(tier.lower())
+            packs_list = [p for p in packs_list if p.metadata.tier == tier_enum]
+        except ValueError:
+            show_error(f"Invalid tier: {tier}. Use: community, pro")
+            raise typer.Exit(1)
+
+    if not packs_list:
+        console.print("[yellow]No packs found.[/yellow]")
+        if tier:
+            console.print("[dim]Tip: Install pro packs with: pip install ai-security-scanner-pro[/dim]")
+        raise typer.Exit(0)
+
+    table = Table(title="Available Attack Packs")
+    table.add_column("Name", style="cyan")
+    table.add_column("Version", style="dim")
+    table.add_column("Tier", style="green")
+    table.add_column("Description")
+    if verbose:
+        table.add_column("Attacks", style="yellow")
+
+    for pack in packs_list:
+        meta = pack.metadata
+        row = [
+            meta.name,
+            meta.version,
+            meta.tier.value,
+            meta.description[:50] + "..." if len(meta.description) > 50 else meta.description,
+        ]
+        if verbose:
+            attacks = pack.get_attack_modules()
+            row.append(str(len(attacks)))
+        table.add_row(*row)
+
+    console.print()
+    console.print(table)
+    console.print()
+
+    # Show any load errors
+    if registry.load_errors:
+        console.print("[yellow]Pack loading errors:[/yellow]")
+        for name, error in registry.load_errors.items():
+            console.print(f"  [red]{name}[/red]: {error}")
+
+
+@app.command()
+def attacks(
+    pack: Optional[str] = typer.Option(
+        None,
+        "--pack",
+        "-p",
+        help="Filter attacks by pack name",
+    ),
+    category: Optional[str] = typer.Option(
+        None,
+        "--category",
+        "-c",
+        help="Filter by category: security, reliability, cost",
+    ),
+) -> None:
+    """List all available attack modules."""
+    from rich.table import Table
+    from backend.app.features.scanner.packs import get_registry
+
+    registry = get_registry()
+
+    table = Table(title="Available Attack Modules")
+    table.add_column("Attack Name", style="cyan")
+    table.add_column("Category", style="green")
+    table.add_column("Pack", style="yellow")
+    table.add_column("Description")
+
+    for pack_name, pack_obj in registry.packs.items():
+        if pack and pack_name != pack:
+            continue
+
+        modules = pack_obj.get_attack_modules()
+        for module in modules:
+            module_category = getattr(module, "category", "security")
+            if category and module_category != category:
+                continue
+
+            desc = module.description if hasattr(module, "description") else ""
+            table.add_row(
+                module.name,
+                module_category,
+                pack_name,
+                desc[:40] + "..." if len(desc) > 40 else desc,
+            )
+
+    console.print()
+    console.print(table)
+    console.print()
 
 
 @app.command()
