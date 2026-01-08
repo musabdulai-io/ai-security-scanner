@@ -29,9 +29,7 @@ pip install "ai-security-scanner-pro @ git+ssh://git@github.com/musabdulai-io/ai
 
 ## Sample Report
 
-See what an audit report looks like:
-- [View Sample HTML Report](samples/sample-audit-report.html)
-- [Download Sample PDF Report](samples/sample-audit-report.pdf)
+See what an audit report looks like: [View Sample Report](https://musabdulai.com/sample-report)
 
 ## Features
 
