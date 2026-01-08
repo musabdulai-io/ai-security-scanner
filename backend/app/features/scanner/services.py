@@ -3,42 +3,15 @@
 
 import uuid
 from datetime import datetime
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Set
 
 import httpx
 
-from backend.app.core import logs, settings, create_judge, LLMJudge
-from .attacks import (
-    AttackModule,
-    # Security attacks
-    PromptInjector,
-    PIILeaker,
-    RAGPoisoner,
-    PromptExtraction,
-    OutputWeaponization,
-    ExcessiveAgency,
-    ToolAbuseAttack,
-    EncodingAttack,
-    StructureAttack,
-    IndirectInjection,
-    MultiTurnAttack,
-    LanguageAttack,
-    ManyShotJailbreak,
-    ContentContinuationAttack,
-    RefusalBypassTest,
-    # Reliability attacks
-    HallucinationDetection,
-    TableParsingTest,
-    RetrievalPrecisionTest,
-    CompetitorTrap,
-    PricingTrap,
-    OffTopicHandler,
-    BrandSafetyTest,
-    # Cost attacks
-    EfficiencyAnalysis,
-    ResourceExhaustionAttack,
-)
+from backend.app.core import logs, settings
+from .attacks.base import AttackModule
 from .models import AttackResult, AttackCategory, ScanResult, Vulnerability, Severity
+from .packs.discovery import get_registry, PackRegistry
+from .packs.protocol import Pack, PackTier
 
 
 class ScannerService:
@@ -47,54 +20,116 @@ class ScannerService:
     def __init__(
         self,
         competitors: Optional[List[str]] = None,
-        use_llm_judge: bool = False,
-        judge_provider: Optional[str] = None,
+        # Pack-related parameters
+        packs: Optional[List[str]] = None,  # Specific pack names to use
+        pack_tiers: Optional[List[PackTier]] = None,  # Filter by tier
+        exclude_packs: Optional[List[str]] = None,  # Packs to exclude
     ) -> None:
-        """Initialize scanner with attack modules.
+        """Initialize scanner with attack modules from packs.
 
         Args:
             competitors: List of competitor names for QA tests
-            use_llm_judge: Whether to use LLM-as-Judge for detection
-            judge_provider: LLM provider for judge ("openai" or "anthropic")
+            packs: Specific pack names to use (None = all available)
+            pack_tiers: Filter packs by tier (None = all tiers)
+            exclude_packs: Pack names to exclude
         """
-        self.attacks: List[AttackModule] = [
-            # === SECURITY ATTACKS ===
-            PromptInjector(),
-            PIILeaker(),
-            RAGPoisoner(),
-            PromptExtraction(),
-            OutputWeaponization(),
-            ExcessiveAgency(),
-            ToolAbuseAttack(),
-            EncodingAttack(),
-            StructureAttack(),
-            IndirectInjection(),
-            MultiTurnAttack(),
-            LanguageAttack(),
-            ManyShotJailbreak(),
-            ContentContinuationAttack(),
-            RefusalBypassTest(),
-            # === RELIABILITY ATTACKS ===
-            HallucinationDetection(),
-            TableParsingTest(),
-            RetrievalPrecisionTest(),
-            CompetitorTrap(competitors=competitors),
-            PricingTrap(),
-            OffTopicHandler(),
-            BrandSafetyTest(),
-            # === COST ATTACKS ===
-            EfficiencyAnalysis(),
-            ResourceExhaustionAttack(),
-        ]
+        # Discover and load packs
+        self.registry = get_registry()
 
-        # Initialize LLM judge if requested
-        self.judge: Optional[LLMJudge] = None
-        if use_llm_judge:
-            self.judge = create_judge(provider=judge_provider)
-            if self.judge:
-                logs.info("LLM judge enabled", "scanner", {"provider": judge_provider or "auto"})
-            else:
-                logs.warning("LLM judge requested but no API key found", "scanner")
+        # Configuration for attack module initialization
+        self._module_kwargs = {
+            "competitors": competitors,
+        }
+
+        # Load attacks from selected packs
+        self.attacks: List[AttackModule] = self._load_attacks(
+            packs=packs,
+            pack_tiers=pack_tiers,
+            exclude_packs=exclude_packs or [],
+        )
+
+        # Track which packs are active
+        self.active_packs: List[Pack] = self._get_active_packs(
+            packs=packs,
+            pack_tiers=pack_tiers,
+            exclude_packs=exclude_packs or [],
+        )
+
+        logs.info(
+            f"Scanner initialized",
+            "scanner",
+            {
+                "packs": len(self.active_packs),
+                "attacks": len(self.attacks),
+            },
+        )
+
+    def _load_attacks(
+        self,
+        packs: Optional[List[str]],
+        pack_tiers: Optional[List[PackTier]],
+        exclude_packs: List[str],
+    ) -> List[AttackModule]:
+        """Load attack modules from selected packs."""
+        attacks: List[AttackModule] = []
+        seen_attack_names: Set[str] = set()
+
+        for pack_name, pack in self.registry.packs.items():
+            # Apply filters
+            if exclude_packs and pack_name in exclude_packs:
+                continue
+            if packs is not None and pack_name not in packs:
+                continue
+            if pack_tiers is not None and pack.metadata.tier not in pack_tiers:
+                continue
+
+            # Get modules from pack
+            try:
+                modules = pack.get_attack_modules(**self._module_kwargs)
+                for module in modules:
+                    # Avoid duplicates (same attack from multiple packs)
+                    if module.name not in seen_attack_names:
+                        attacks.append(module)
+                        seen_attack_names.add(module.name)
+
+                logs.debug(
+                    f"Loaded {len(modules)} attacks from pack '{pack_name}'",
+                    "scanner"
+                )
+            except Exception as e:
+                logs.error(
+                    f"Failed to load attacks from pack '{pack_name}'",
+                    "scanner",
+                    exception=e
+                )
+
+        return attacks
+
+    def _get_active_packs(
+        self,
+        packs: Optional[List[str]],
+        pack_tiers: Optional[List[PackTier]],
+        exclude_packs: List[str],
+    ) -> List[Pack]:
+        """Get list of active packs after filtering."""
+        active = []
+        for pack_name, pack in self.registry.packs.items():
+            if exclude_packs and pack_name in exclude_packs:
+                continue
+            if packs is not None and pack_name not in packs:
+                continue
+            if pack_tiers is not None and pack.metadata.tier not in pack_tiers:
+                continue
+            active.append(pack)
+        return active
+
+    def list_packs(self) -> List[Pack]:
+        """List all available packs."""
+        return list(self.registry.packs.values())
+
+    def list_attacks(self) -> List[AttackModule]:
+        """List all loaded attacks."""
+        return self.attacks.copy()
 
     async def scan(
         self,
@@ -121,12 +156,13 @@ class ScannerService:
         logs.info(
             f"Starting scan {scan_id}",
             "scanner",
-            {"target": target_url, "fast": fast},
+            {"target": target_url, "fast": fast, "attacks": len(self.attacks)},
         )
 
         if on_progress:
             on_progress(f"[INFO] Initializing scan {scan_id[:8]}...")
             on_progress(f"[INFO] Target: {target_url}")
+            on_progress(f"[INFO] Running {len(self.attacks)} attack modules...")
 
         attack_results: List[AttackResult] = []
         all_vulnerabilities: List[Vulnerability] = []
@@ -159,21 +195,6 @@ class ScannerService:
                         vulnerabilities=result.vulnerabilities,
                         raw_log=result.raw_log,
                     )
-
-                    # LLM judge evaluation (if enabled and no vulnerabilities found)
-                    if self.judge and not result.vulnerabilities and result.raw_log:
-                        judge_vulns = await self._judge_evaluate(
-                            attack.name, result.raw_log, on_progress
-                        )
-                        if judge_vulns:
-                            result = AttackResult(
-                                attack_type=result.attack_type,
-                                category=category,
-                                status="FAIL",
-                                latency_ms=result.latency_ms,
-                                vulnerabilities=judge_vulns,
-                                raw_log=result.raw_log,
-                            )
 
                     attack_results.append(result)
                     all_vulnerabilities.extend(result.vulnerabilities)
@@ -246,76 +267,3 @@ class ScannerService:
             attack_results=attack_results,
             raw_log=all_raw_logs,
         )
-
-    async def _judge_evaluate(
-        self,
-        attack_name: str,
-        raw_log: List[dict],
-        on_progress: Optional[Callable[[str], None]] = None,
-    ) -> List[Vulnerability]:
-        """Use LLM judge to evaluate attack results for vulnerabilities.
-
-        Args:
-            attack_name: Name of the attack being evaluated
-            raw_log: Raw log entries from the attack
-            on_progress: Optional progress callback
-
-        Returns:
-            List of vulnerabilities found by the judge
-        """
-        if not self.judge:
-            return []
-
-        vulnerabilities = []
-
-        for entry in raw_log:
-            # Extract prompt and response from log entry
-            prompt = entry.get("prompt") or entry.get("question") or entry.get("payload", "")
-            response = entry.get("response_text") or entry.get("response", "")
-
-            if not prompt or not response:
-                continue
-
-            # Skip error entries
-            if entry.get("error"):
-                continue
-
-            try:
-                if on_progress:
-                    on_progress(f"[INFO] LLM judge evaluating {attack_name}...")
-
-                result = await self.judge.evaluate(
-                    attack_prompt=prompt,
-                    ai_response=response,
-                    attack_type=attack_name,
-                )
-
-                if result.is_vulnerable:
-                    vuln_type = "System Prompt Leaked" if result.leaked_system_prompt else \
-                                "Attack Compliance" if result.complied_with_attack else \
-                                "Harmful Content Generated"
-
-                    vulnerabilities.append(
-                        Vulnerability(
-                            name=f"{attack_name}: {vuln_type} (LLM Judge)",
-                            severity=Severity.HIGH,
-                            description=(
-                                f"LLM-as-Judge detected a vulnerability that regex patterns missed. "
-                                f"Confidence: {result.confidence:.0%}. "
-                                f"The AI's response showed signs of: {vuln_type.lower()}."
-                            ),
-                            evidence_request=prompt[:500],
-                            evidence_response=result.evidence or response[:500],
-                        )
-                    )
-                    logs.warning(
-                        f"LLM judge found vulnerability",
-                        "scanner",
-                        {"attack": attack_name, "confidence": result.confidence},
-                    )
-                    break  # One vulnerability per attack is enough
-
-            except Exception as e:
-                logs.error(f"LLM judge evaluation failed", "scanner", exception=e)
-
-        return vulnerabilities

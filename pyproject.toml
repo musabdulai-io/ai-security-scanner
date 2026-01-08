@@ -21,10 +21,14 @@ pydantic-settings = "^2.2.0"
 fastapi = "^0.111.0"
 uvicorn = "^0.29.0"
 sse-starlette = "^2.0.0"
-weasyprint = "^60.0"
 
 [tool.poetry.scripts]
 scanner = "backend.app.cli:app"
+
+[tool.poetry.plugins."ai_security_scanner.packs"]
+community-security = "backend.app.features.scanner.packs.builtin.community_security:CommunitySecurityPack"
+community-reliability = "backend.app.features.scanner.packs.builtin.community_reliability:CommunityReliabilityPack"
+community-cost = "backend.app.features.scanner.packs.builtin.community_cost:CommunityCostPack"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

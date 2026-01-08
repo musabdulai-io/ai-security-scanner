@@ -1,6 +1,6 @@
 # AI Security Scanner
 
-A security auditing tool for LLM and RAG applications. Test for prompt injection, RAG poisoning, PII leakage, hallucinations, and more.
+A security auditing tool for LLM and RAG applications. Test for prompt injection, PII leakage, hallucinations, and more.
 
 ## Get Started
 
@@ -8,13 +8,38 @@ A security auditing tool for LLM and RAG applications. Test for prompt injection
 - [View on GitHub](https://github.com/musabdulai-io/ai-security-scanner)
 - [Book a Call](https://calendly.com/musabdulai/ai-security-check) - For custom scanning of your AI apps
 
+## Editions: Community vs Pro
+
+| Feature | Community | Pro |
+|---------|-----------|-----|
+| Attack Modules | 7 | 24 |
+| HTML Reports | ✅ | ✅ |
+| PDF Reports | ❌ | ✅ |
+| LLM-as-Judge | ❌ | ✅ |
+| Advanced Attacks | ❌ | ✅ |
+
+### Install Pro
+
+Pro edition is available via private repository. [Contact for access](https://calendly.com/musabdulai/ai-security-check)
+
+```bash
+# After obtaining access
+pip install "ai-security-scanner-pro @ git+ssh://git@github.com/musabdulai-io/ai-security-scanner-pro.git"
+```
+
+## Sample Report
+
+See what an audit report looks like:
+- [View Sample HTML Report](samples/sample-audit-report.html)
+- [Download Sample PDF Report](samples/sample-audit-report.pdf)
+
 ## Features
 
-- **24 Attack Modules** - Security, reliability, and cost vulnerability testing
-- **HTML & PDF Reports** - Detailed vulnerability reports with evidence and remediation
-- **LLM-as-Judge** - Optional AI-powered detection for better accuracy
+- **7 Attack Modules** - Security, reliability, and cost vulnerability testing
+- **HTML Reports** - Detailed vulnerability reports with evidence and remediation
 - **CLI & Web Interface** - Use from terminal or browser
 - **cURL Import** - Import target configuration from cURL commands
+- **Pack System** - Extensible plugin architecture for additional modules
 
 ## Tech Stack
 
@@ -23,8 +48,7 @@ A security auditing tool for LLM and RAG applications. Test for prompt injection
 | **CLI** | Python, Typer, Rich |
 | **Backend** | FastAPI, Uvicorn, Pydantic |
 | **Frontend** | Next.js 14, React, TailwindCSS |
-| **LLM Integration** | OpenAI, Anthropic (LLM-as-Judge) |
-| **Reports** | WeasyPrint (PDF), Jinja2 (HTML) |
+| **Reports** | Jinja2 (HTML) |
 | **Deployment** | Docker, GitHub Container Registry |
 
 ## Quick Start
@@ -37,9 +61,6 @@ A security auditing tool for LLM and RAG applications. Test for prompt injection
 # Basic scan
 docker run --rm ghcr.io/musabdulai-io/ai-security-scanner scan https://your-app.com
 
-# With LLM Judge (pass API key)
-docker run --rm -e OPENAI_API_KEY=$OPENAI_API_KEY ghcr.io/musabdulai-io/ai-security-scanner scan https://your-app.com --llm-judge
-
 # Save report to host
 docker run --rm -v $(pwd)/reports:/reports ghcr.io/musabdulai-io/ai-security-scanner scan https://your-app.com -o /reports/report.html
 ```
@@ -50,9 +71,6 @@ docker run --rm -v $(pwd)/reports:/reports ghcr.io/musabdulai-io/ai-security-sca
 
 ```bash
 pipx run --spec git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
-
-# With LLM Judge
-pipx run --spec git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com --llm-judge --api-key sk-...
 ```
 
 ### Option 3: uvx
@@ -61,9 +79,6 @@ pipx run --spec git+https://github.com/musabdulai-io/ai-security-scanner scanner
 
 ```bash
 uvx --from git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com
-
-# With LLM Judge
-uvx --from git+https://github.com/musabdulai-io/ai-security-scanner scanner scan https://your-app.com --llm-judge --api-key sk-...
 ```
 
 ### Option 4: From Source (Poetry)
@@ -91,18 +106,8 @@ scanner scan https://your-app.com
 # Basic scan
 scanner scan https://your-app.com
 
-# Fast scan (skip RAG upload tests)
+# Fast scan (skip slow tests)
 scanner scan https://your-app.com --fast
-
-# With LLM Judge for better detection (requires API key)
-export OPENAI_API_KEY=sk-...  # or ANTHROPIC_API_KEY
-scanner scan https://your-app.com --llm-judge
-
-# Or pass API key directly via flag
-scanner scan https://your-app.com --llm-judge --api-key sk-...
-
-# Generate both HTML and PDF reports
-scanner scan https://your-app.com --pdf
 
 # Custom output file
 scanner scan https://your-app.com --output audit.html
@@ -118,21 +123,20 @@ scanner scan https://your-app.com --competitor "Acme Corp" --competitor "BigCo"
 
 # Don't auto-open report
 scanner scan https://your-app.com --no-open
+
+# List available packs
+scanner packs
+
+# List all attack modules
+scanner attacks
 ```
-
-### Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | OpenAI API key for LLM Judge (uses gpt-4o-mini) |
-| `ANTHROPIC_API_KEY` | Anthropic API key for LLM Judge (uses claude-3-haiku) |
-
-Set one of these to enable `--llm-judge`. The scanner auto-detects which provider to use.
 
 ### Commands
 
 ```
 scanner scan [TARGET] [OPTIONS]    Run security scan
+scanner packs                      List available attack packs
+scanner attacks                    List all attack modules
 scanner version                    Show version
 scanner info                       Show configuration
 ```
@@ -142,75 +146,49 @@ scanner info                       Show configuration
 | Option | Description |
 |--------|-------------|
 | `--output, -o` | Output file path (default: report.html) |
-| `--fast, -f` | Skip slow tests (RAG poisoning) |
+| `--fast, -f` | Skip slow tests |
 | `--header, -H` | Custom HTTP headers |
 | `--curl` | Import target from cURL command |
 | `--competitor` | Competitor names to test against |
 | `--concurrency, -c` | Concurrent requests (default: 5) |
-| `--llm-judge` | Use LLM-as-Judge for better detection (requires API key) |
-| `--judge-provider` | LLM provider: 'openai' or 'anthropic' (auto-detects if not set) |
 | `--verbose, -v` | Include raw AI responses in report |
-| `--pdf` | Generate PDF report (in addition to HTML) |
 | `--no-open` | Don't open report in browser |
-| `--test-data-dir, -d` | Directory containing custom test documents for RAG attacks |
-| `--api-key, -k` | API key for LLM Judge (alternative to env vars) |
-
-### PDF Generation
-
-To generate PDF reports (`--pdf` flag), install system libraries:
-
-```bash
-# macOS
-brew install glib pango gdk-pixbuf libffi
-
-# Ubuntu/Debian
-sudo apt install libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev libcairo2
-```
-
-Docker images include these dependencies automatically.
+| `--test-data-dir, -d` | Directory containing custom test documents |
 
 ## Attack Modules
 
-The scanner includes **24 attack modules** organized into three categories:
+The Community edition includes **7 attack modules** organized into three categories:
 
-### Security Attacks (15)
+### Security Attacks (4)
 
 | Attack | Description |
 |--------|-------------|
 | **Prompt Injection** | Tests if AI can be manipulated to reveal system prompts or ignore instructions |
 | **PII Leaking** | Detects exposure of emails, SSNs, API keys, credit cards |
-| **RAG Poisoning** | Tests if malicious documents can influence AI responses |
 | **Prompt Extraction** | Attempts to extract the system prompt |
-| **Output Weaponization** | Tests if AI generates harmful content on demand |
-| **Excessive Agency** | Checks if AI claims capabilities it shouldn't have |
-| **Tool Abuse** | Tests misuse of available tools/functions |
-| **Encoding Bypass** | Tests bypass via base64, unicode, hex encoding |
-| **Structure Injection** | Tests injection via JSON, XML, markdown structures |
-| **Indirect Prompt Injection** | Tests injection via hidden channels |
-| **Multi-Turn Jailbreak** | Tests jailbreaks across conversation turns |
-| **Language Bypass** | Tests bypass via non-English or mixed languages |
-| **Many-Shot Jailbreak** | Tests few-shot example-based jailbreaks |
-| **Content Continuation** | Tests if AI continues harmful content |
 | **Refusal Bypass** | Tests techniques to bypass safety refusals |
 
-### Reliability Attacks (7)
+### Reliability Attacks (2)
 
 | Attack | Description |
 |--------|-------------|
 | **Hallucination Detection** | Detects fabricated facts, fake citations, URLs |
-| **Table Parsing** | Tests structured data extraction accuracy |
-| **Retrieval Precision** | Measures RAG document relevance |
-| **Competitor Trap** | Tests if AI endorses/badmouths competitors |
-| **Pricing Trap** | Tests if AI offers unauthorized discounts |
 | **Off-Topic Handling** | Tests refusal of harmful/off-topic requests |
-| **Brand Safety** | Tests brand guideline compliance |
 
-### Cost Attacks (2)
+### Cost Attacks (1)
 
 | Attack | Description |
 |--------|-------------|
 | **Efficiency Analysis** | Measures latency and token usage |
-| **Resource Exhaustion** | Tests if AI can be tricked into excessive generation |
+
+### Pro Edition Attacks (17 additional)
+
+The Pro edition adds 17 more advanced attack modules including:
+- RAG Poisoning, Encoding Bypass, Structure Injection
+- Indirect Injection, Multi-Turn Jailbreak, Language Bypass
+- Many-Shot Jailbreak, Content Continuation, Tool Abuse
+- Excessive Agency, Brand Safety, Competitor/Pricing Traps
+- Table Parsing, Retrieval Precision, Resource Exhaustion
 
 ## Architecture
 
@@ -234,16 +212,15 @@ The scanner includes **24 attack modules** organized into three categories:
 │         ┌─────────────────┼─────────────────┐                   │
 │         ▼                 ▼                 ▼                   │
 │   ┌───────────┐    ┌───────────┐    ┌───────────┐             │
-│   │  Attack   │    │  Pattern  │    │    LLM    │             │
-│   │  Modules  │    │  Detector │    │   Judge   │             │
-│   │   (24)    │    │           │    │ (Optional)│             │
+│   │  Attack   │    │  Pattern  │    │   Pack    │             │
+│   │  Modules  │    │  Detector │    │  System   │             │
 │   └─────┬─────┘    └─────┬─────┘    └─────┬─────┘             │
 │         │                │                │                     │
 │         └────────────────┼────────────────┘                     │
 │                          ▼                                       │
 │                 ┌─────────────────┐                             │
 │                 │ Report Generator│                             │
-│                 │  (HTML / PDF)   │                             │
+│                 │     (HTML)      │                             │
 │                 └─────────────────┘                             │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -334,6 +311,7 @@ ai-security-scanner/
 │   ├── app/          # Next.js app router
 │   ├── Dockerfile    # Production container
 │   └── Dockerfile.dev # Development container
+├── samples/           # Sample audit reports
 ├── docker-compose.yml # Development orchestration
 ├── setup.sh          # Local setup script
 └── pyproject.toml    # Python dependencies
@@ -369,6 +347,23 @@ The HTML report includes:
 - **Attack Results** - Status and timing for each attack module
 - **Vulnerability Details** - Description, evidence, and remediation for each finding
 
+## Responsible Use
+
+This tool is designed for **authorized security testing only**.
+
+**Requirements:**
+- You must own the system or have explicit written permission
+- Only scan systems you are authorized to test
+- Do not use for unauthorized access or data extraction
+
+**Prohibited Uses:**
+- Scanning systems without authorization
+- Denial-of-service attacks
+- Data exfiltration from production systems
+- Any illegal activities
+
+Misuse may violate computer fraud and abuse laws. See [SECURITY.md](SECURITY.md) for detailed guidelines.
+
 ## Contributing
 
 1. Fork the repository
@@ -380,12 +375,6 @@ The HTML report includes:
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## Disclaimer
-
-This tool is for authorized security testing only. Only scan applications you own or have explicit written permission to test. Unauthorized scanning may violate laws and terms of service.
-
-See [SECURITY.md](SECURITY.md) for responsible use guidelines.
 
 ## Contact
 

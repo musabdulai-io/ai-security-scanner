@@ -18,11 +18,13 @@ venv/
 .pytest_cache/
 .coverage
 
-# Generated reports
+# Generated reports (except samples)
 *.html
 *.pdf
 !backend/templates/*.html
 !frontend/**/*.html
+!samples/*.html
+!samples/*.pdf
 
 # Node (frontend)
 node_modules/
