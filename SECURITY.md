@@ -1,33 +1,28 @@
 # Security Policy
 
-## Safe Harbor for Demo Environment
-
-We encourage security research on our deployed demo at `https://audit.musabdulai.com`.
-
-### Scope
-
-The following activities are permitted under this Safe Harbor policy:
-- Running scans against the provided sandbox target (`https://rag.musabdulai.com`)
-- Reporting vulnerabilities found in the scanner tool itself
-- Testing the scanner's detection capabilities
-
-### Out of Scope
-
-The following activities are **NOT** permitted:
-- Attempting to bypass sandbox restrictions
-- Denial of service attacks
-- Attacks targeting the infrastructure (servers, databases, etc.)
-- Social engineering attacks
-- Scanning targets other than the designated sandbox
-
 ## Responsible Use
 
-This tool is designed for **educational and defensive purposes**. Users are responsible for:
+This tool is designed for **authorized security testing only**. Users are responsible for:
 
 1. **Authorization** - Obtaining written permission (Letter of Authorization) before scanning any targets they do not own
 2. **Scope Limitation** - Only testing systems within the authorized scope
 3. **No Harm** - Not causing damage, data loss, or service disruption
 4. **Confidentiality** - Not disclosing vulnerabilities found in third-party systems without proper coordination
+
+## Permitted Use Cases
+
+- Testing your own LLM/RAG applications
+- Authorized penetration testing engagements
+- CTF competitions and security research
+- Validating guardrails and safety controls before production deployment
+
+## Prohibited Uses
+
+- Scanning systems without authorization
+- Denial of service attacks
+- Data exfiltration from production systems
+- Bypassing authentication or access controls on systems you don't own
+- Any illegal activities
 
 ## Legal Compliance
 
@@ -39,7 +34,7 @@ Use of this tool must comply with:
 
 ## Reporting Security Issues
 
-If you discover a security vulnerability in the AI Security Scanner itself:
+If you discover a security vulnerability in the LLM Production Safety Scanner itself:
 
 1. **Do not** create a public GitHub issue
 2. Email security concerns to [security@musabdulai.com]

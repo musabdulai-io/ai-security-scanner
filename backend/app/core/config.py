@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # Application
-    APP_NAME: str = "ai-security-scanner"
+    APP_NAME: str = "llm-production-safety-scanner"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     REQUEST_TIMEOUT: int = 30
     MAX_INPUT_LENGTH: int = 10000
 
-    # Web Mode Security
-    SANDBOX_URL: str = "https://rag-api.musabdulai.com"
+    # Default target for testing (set to your local RAG endpoint)
+    SANDBOX_URL: str = "http://localhost:8080"
     RATE_LIMIT_REQUESTS: int = 1
     RATE_LIMIT_WINDOW: int = 300  # 5 minutes per IP
 
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     )
 
     # Lead Generation
-    CTA_URL: str = "https://calendly.com/musabdulai/ai-security-check"
+    CTA_URL: str = "https://calendly.com/musabdulai/guardrails-sprint"
     CTA_TEXT: str = "Book a Call → Get Expert Help"
 
     @property

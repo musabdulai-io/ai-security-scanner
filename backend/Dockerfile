@@ -1,26 +1,26 @@
-# Backend Dockerfile for AI Security Scanner - Production
+# LLM Production Safety Scanner - Dockerfile
 #
 # Dual-mode: Web server (default) or CLI scanner
 #
 # Usage:
-#   docker build -f backend/Dockerfile -t ai-scanner .
+#   docker build -f backend/Dockerfile -t llm-scanner .
 #
 #   # Web server (default)
-#   docker run -p 8000:8000 ai-scanner
-#   docker run -p 8000:8000 ai-scanner web
+#   docker run -p 8000:8000 llm-scanner
+#   docker run -p 8000:8000 llm-scanner web
 #
 #   # CLI scanner
-#   docker run ai-scanner scan https://your-app.com
-#   docker run ai-scanner https://your-app.com  # auto-detect
-#   docker run -v $(pwd)/reports:/reports ai-scanner scan https://app.com -o /reports/report.html
+#   docker run llm-scanner scan https://your-app.com
+#   docker run llm-scanner https://your-app.com  # auto-detect
+#   docker run -v $(pwd)/reports:/reports llm-scanner scan https://app.com -o /reports/report.html
 #
 #   # CLI commands
-#   docker run ai-scanner version
-#   docker run ai-scanner --help
+#   docker run llm-scanner version
+#   docker run llm-scanner --help
 
 FROM python:3.11-slim AS production
 
-LABEL org.opencontainers.image.source="https://github.com/musabdulai-io/ai-security-scanner"
+LABEL org.opencontainers.image.source="https://github.com/musabdulai-io/llm-production-safety-scanner"
 
 WORKDIR /app
 

@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile.dev
-    container_name: ai-scanner-backend
+    container_name: llm-scanner-backend
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -17,24 +17,4 @@ services:
       - /app/__pycache__
     ports:
       - "8000:8000"
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: ai-scanner-frontend
-    env_file:
-      - .env
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-      - NEXT_PUBLIC_SANDBOX_URL=https://rag-api.musabdulai.com
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
     restart: unless-stopped

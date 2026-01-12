@@ -1,11 +1,11 @@
 # Pro Repository Skeleton Specification
 
-This document specifies how to set up the `ai-security-scanner-pro` private repository.
+This document specifies how to set up the `llm-production-safety-scanner-pro` private repository.
 
 ## Directory Structure
 
 ```
-ai-security-scanner-pro/
+llm-production-safety-scanner-pro/
 ├── pyproject.toml
 ├── README.md
 ├── LICENSE                     # Commercial license
@@ -30,7 +30,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "ai-security-scanner-pro"
+name = "llm-production-safety-scanner-pro"
 version = "1.0.0"
 description = "Pro attack packs for AI Security Scanner"
 authors = ["Musa Abdulai"]
@@ -38,7 +38,7 @@ packages = [{include = "scanner_pro"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-ai-security-scanner = "^1.0.0"  # Depends on community
+llm-production-safety-scanner = "^1.0.0"  # Depends on community
 weasyprint = "^62.0"            # For PDF generation
 openai = "^1.0.0"               # For LLM Judge
 anthropic = "^0.20.0"           # For LLM Judge
@@ -155,11 +155,11 @@ class ProSecurityPack(Pack):
 
 ```bash
 # Install community edition first
-cd ai-security-scanner
+cd llm-production-safety-scanner
 pip install -e .
 
 # Then install pro edition
-cd ../ai-security-scanner-pro
+cd ../llm-production-safety-scanner-pro
 pip install -e .
 ```
 
@@ -167,10 +167,10 @@ pip install -e .
 
 ```bash
 # Via SSH
-pip install "ai-security-scanner-pro @ git+ssh://git@github.com/musabdulai-io/ai-security-scanner-pro.git"
+pip install "llm-production-safety-scanner-pro @ git+ssh://git@github.com/musabdulai-io/llm-production-safety-scanner-pro.git"
 
 # Via HTTPS with token
-pip install "ai-security-scanner-pro @ git+https://${GITHUB_TOKEN}@github.com/musabdulai-io/ai-security-scanner-pro.git"
+pip install "llm-production-safety-scanner-pro @ git+https://${GITHUB_TOKEN}@github.com/musabdulai-io/llm-production-safety-scanner-pro.git"
 ```
 
 ## Verification
@@ -194,11 +194,11 @@ To remove Pro code from public repo history after migration:
 
 ```bash
 # 1. BACKUP FIRST - create mirror clone
-git clone --mirror git@github.com:musabdulai-io/ai-security-scanner.git ai-security-scanner-backup.git
+git clone --mirror git@github.com:musabdulai-io/llm-production-safety-scanner.git llm-production-safety-scanner-backup.git
 
 # 2. Clone fresh for rewrite
-git clone git@github.com:musabdulai-io/ai-security-scanner.git ai-security-scanner-rewrite
-cd ai-security-scanner-rewrite
+git clone git@github.com:musabdulai-io/llm-production-safety-scanner.git llm-production-safety-scanner-rewrite
+cd llm-production-safety-scanner-rewrite
 
 # 3. Remove Pro paths from history
 git filter-repo --invert-paths \
@@ -223,7 +223,7 @@ git filter-repo --invert-paths \
   --path-glob '**/*.pyc'
 
 # 4. Re-add remote (filter-repo removes it)
-git remote add origin git@github.com:musabdulai-io/ai-security-scanner.git
+git remote add origin git@github.com:musabdulai-io/llm-production-safety-scanner.git
 
 # 5. Force push all branches and tags
 git push --force --all origin

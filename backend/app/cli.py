@@ -261,7 +261,7 @@ def packs(
     if not packs_list:
         console.print("[yellow]No packs found.[/yellow]")
         if tier:
-            console.print("[dim]Tip: Install pro packs with: pip install ai-security-scanner-pro[/dim]")
+            console.print("[dim]Tip: Install pro packs with: pip install llm-production-safety-scanner-pro[/dim]")
         raise typer.Exit(0)
 
     table = Table(title="Available Attack Packs")
